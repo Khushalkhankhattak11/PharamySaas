@@ -1,0 +1,48 @@
+{
+  "firestore": {
+    "rules": "firestore.rules",
+    "indexes": "firestore.indexes.json"
+  },
+  "storage": {
+    "rules": "storage.rules"
+  },
+  "flutter": {
+    "platforms": {
+      "android": {
+        "default": {
+          "projectId": "pharmsaas",
+          "appId": "1:531983043265:android:25e344e93b9d748c576240",
+          "fileOutput": "android/app/google-services.json"
+        }
+      },
+      "ios": {
+        "default": {
+          "projectId": "pharmsaas",
+          "appId": "1:531983043265:ios:9a52a8680b361776576240",
+          "uploadDebugSymbols": false,
+          "fileOutput": "ios/Runner/GoogleService-Info.plist"
+        }
+      },
+      "macos": {
+        "default": {
+          "projectId": "pharmsaas",
+          "appId": "1:531983043265:ios:9a52a8680b361776576240",
+          "uploadDebugSymbols": false,
+          "fileOutput": "macos/Runner/GoogleService-Info.plist"
+        }
+      },
+      "dart": {
+        "lib/firebase_options.dart": {
+          "projectId": "pharmsaas",
+          "configurations": {
+            "android": "1:531983043265:android:25e344e93b9d748c576240",
+            "ios": "1:531983043265:ios:9a52a8680b361776576240",
+            "macos": "1:531983043265:ios:9a52a8680b361776576240",
+            "web": "1:531983043265:web:d8d67fdc9c434009576240",
+            "windows": "1:531983043265:web:8aec729f6079b0c3576240"
+          }
+        }
+      }
+    }
+  }
+}

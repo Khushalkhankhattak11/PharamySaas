@@ -1,0 +1,338 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Global Authentication & Role Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function hasProfile() {
+      return isAuthenticated() &&
+        exists(/databases/$(database)/documents/profiles/$(request.auth.uid));
+    }
+
+    function getUserProfile() {
+      return get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data;
+    }
+
+    function getUserPharmacyId() {
+      return ('pharmacy_id' in request.auth.token && request.auth.token.pharmacy_id != null)
+        ? request.auth.token.pharmacy_id
+        : (hasProfile() && getUserProfile().get('pharmacy_id', null) != null
+            ? getUserProfile().get('pharmacy_id', '')
+            : '');
+    }
+
+    // Super Admin: ALWAYS TRUE across all access
+    function isSuperAdmin() {
+      return isAuthenticated() && (
+        (('email' in request.auth.token && request.auth.token.email != null) && (
+          request.auth.token.email.lower() == 'superadmin@admin.com' ||
+          request.auth.token.email.lower().matches('.*superadmin.*')
+        )) ||
+        ('role' in request.auth.token && request.auth.token.role == 'super_admin') ||
+        exists(/databases/$(database)/documents/admin/$(request.auth.uid)) ||
+        (exists(/databases/$(database)/documents/profiles/$(request.auth.uid)) &&
+         get(/databases/$(database)/documents/profiles/$(request.auth.uid)).data.get('role', '') == 'super_admin')
+      );
+    }
+
+    // Tenant Role Helpers
+    function isTenantAdmin(pharmId) {
+      return isSuperAdmin() ||
+        (isAuthenticated() && pharmId != null && pharmId != '' && (
+          ('pharmacy_id' in request.auth.token && request.auth.token.pharmacy_id == pharmId &&
+           'role' in request.auth.token && (request.auth.token.role == 'admin' || request.auth.token.role == 'pharmacy_admin')) ||
+          (exists(/databases/$(database)/documents/pharmacies/$(pharmId)) &&
+           get(/databases/$(database)/documents/pharmacies/$(pharmId)).data.get('owner_id', '') == request.auth.uid) ||
+          (hasProfile() &&
+           getUserProfile().get('pharmacy_id', '') == pharmId &&
+           (getUserProfile().get('role', '') == 'admin' || getUserProfile().get('role', '') == 'pharmacy_admin')) ||
+          (exists(/databases/$(database)/documents/pharmacies/$(pharmId)/staff/$(request.auth.uid)) &&
+           get(/databases/$(database)/documents/pharmacies/$(pharmId)/staff/$(request.auth.uid)).data.get('role', '') == 'admin')
+        ));
+    }
+
+    function isTenantStorekeeper(pharmId) {
+      return isSuperAdmin() ||
+        (isAuthenticated() && pharmId != null && pharmId != '' && (
+          ('pharmacy_id' in request.auth.token && request.auth.token.pharmacy_id == pharmId &&
+           'role' in request.auth.token && request.auth.token.role == 'storekeeper') ||
+          (hasProfile() &&
+           getUserProfile().get('pharmacy_id', '') == pharmId &&
+           getUserProfile().get('role', '') == 'storekeeper') ||
+          exists(/databases/$(database)/documents/pharmacies/$(pharmId)/storekeepers/$(request.auth.uid)) ||
+          exists(/databases/$(database)/documents/storekeepers/$(request.auth.uid)) ||
+          (exists(/databases/$(database)/documents/pharmacies/$(pharmId)/staff/$(request.auth.uid)) &&
+           get(/databases/$(database)/documents/pharmacies/$(pharmId)/staff/$(request.auth.uid)).data.get('role', '') == 'storekeeper')
+        ));
+    }
+
+    function isTenantCashier(pharmId) {
+      return isSuperAdmin() ||
+        (isAuthenticated() && pharmId != null && pharmId != '' && (
+          ('pharmacy_id' in request.auth.token && request.auth.token.pharmacy_id == pharmId &&
+           'role' in request.auth.token && request.auth.token.role == 'cashier') ||
+          (hasProfile() &&
+           getUserProfile().get('pharmacy_id', '') == pharmId &&
+           getUserProfile().get('role', '') == 'cashier') ||
+          exists(/databases/$(database)/documents/pharmacies/$(pharmId)/cashiers/$(request.auth.uid)) ||
+          exists(/databases/$(database)/documents/cashiers/$(request.auth.uid)) ||
+          (exists(/databases/$(database)/documents/pharmacies/$(pharmId)/staff/$(request.auth.uid)) &&
+           get(/databases/$(database)/documents/pharmacies/$(pharmId)/staff/$(request.auth.uid)).data.get('role', '') == 'cashier')
+        ));
+    }
+
+    function targetPharmacyId() {
+      return (resource != null && 'pharmacy_id' in resource.data && resource.data.pharmacy_id != null)
+        ? resource.data.pharmacy_id
+        : ((request.resource != null && 'pharmacy_id' in request.resource.data && request.resource.data.pharmacy_id != null)
+            ? request.resource.data.pharmacy_id
+            : getUserPharmacyId());
+    }
+
+    // ===============================================================
+    // Root Collection: pharmacies & subcollections
+    // ===============================================================
+
+    match /pharmacies/{pharmacyId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isSuperAdmin() || isAuthenticated();
+      allow delete: if isSuperAdmin();
+
+      match /staff/{staffId} {
+        allow read: if isAuthenticated();
+        allow write: if isSuperAdmin() || isTenantAdmin(pharmacyId) || isOwner(staffId) || isOwner(request.auth.uid);
+      }
+
+      match /cashiers/{cashierId} {
+        allow read: if isAuthenticated();
+        allow write: if isSuperAdmin() || isTenantAdmin(pharmacyId) || isOwner(cashierId) || isOwner(request.auth.uid);
+      }
+
+      match /storekeepers/{storekeeperId} {
+        allow read: if isAuthenticated();
+        allow write: if isSuperAdmin() || isTenantAdmin(pharmacyId) || isOwner(storekeeperId) || isOwner(request.auth.uid);
+      }
+
+      match /stocks/{stockId} {
+        allow read: if isAuthenticated();
+        allow create, update: if isSuperAdmin() || isTenantAdmin(pharmacyId) || isTenantStorekeeper(pharmacyId) || isTenantCashier(pharmacyId);
+        allow delete: if isSuperAdmin() || isTenantAdmin(pharmacyId);
+      }
+
+      match /medicines/{medicineId} {
+        allow read: if isAuthenticated();
+        allow create, update: if isSuperAdmin() || isTenantAdmin(pharmacyId) || isTenantStorekeeper(pharmacyId) || isTenantCashier(pharmacyId);
+        allow delete: if isSuperAdmin() || isTenantAdmin(pharmacyId);
+      }
+
+      match /products/{productId} {
+        allow read: if isAuthenticated();
+        allow create, update: if isSuperAdmin() || isTenantAdmin(pharmacyId) || isTenantStorekeeper(pharmacyId) || isTenantCashier(pharmacyId);
+        allow delete: if isSuperAdmin() || isTenantAdmin(pharmacyId);
+      }
+
+      match /Products/{productId} {
+        allow read: if isAuthenticated();
+        allow create, update: if isSuperAdmin() || isTenantAdmin(pharmacyId) || isTenantStorekeeper(pharmacyId) || isTenantCashier(pharmacyId);
+        allow delete: if isSuperAdmin() || isTenantAdmin(pharmacyId);
+      }
+
+      match /batches/{batchId} {
+        allow read: if isAuthenticated();
+        allow create, update: if isSuperAdmin() || isTenantAdmin(pharmacyId) || isTenantStorekeeper(pharmacyId) || isTenantCashier(pharmacyId);
+        allow delete: if isSuperAdmin() || isTenantAdmin(pharmacyId);
+      }
+
+      match /shifts/{shiftId} {
+        allow read: if isAuthenticated();
+        allow create, update: if isSuperAdmin() || isTenantAdmin(pharmacyId) || isTenantCashier(pharmacyId);
+        allow delete: if isSuperAdmin() || isTenantAdmin(pharmacyId);
+      }
+    }
+
+    // ===============================================================
+    // Root Collection: admin (Super Admin Users)
+    // ===============================================================
+
+    match /admin/{adminId} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin() || isOwner(adminId);
+    }
+
+    // ===============================================================
+    // Root Collection: profiles (All User Profiles)
+    // ===============================================================
+
+    match /profiles/{userId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isSuperAdmin() || isOwner(userId) || isAuthenticated();
+      allow delete: if isSuperAdmin() || isOwner(userId);
+    }
+
+    // ===============================================================
+    // Root Staff Collections: cashiers & storekeepers
+    // ===============================================================
+
+    match /cashiers/{cashierId} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin() || isTenantAdmin(targetPharmacyId()) || isOwner(cashierId) || isOwner(request.auth.uid);
+    }
+
+    match /storekeepers/{storekeeperId} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin() || isTenantAdmin(targetPharmacyId()) || isOwner(storekeeperId) || isOwner(request.auth.uid);
+    }
+
+    // ===============================================================
+    // Root Inventory: medicines, products, Products, stocks, batches
+    // ===============================================================
+
+    match /medicines/{medicineId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isSuperAdmin() || isTenantAdmin(targetPharmacyId()) || isTenantStorekeeper(targetPharmacyId()) || isTenantCashier(targetPharmacyId());
+      allow delete: if isSuperAdmin() || isTenantAdmin(targetPharmacyId());
+    }
+
+    match /products/{productId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isSuperAdmin() || isTenantAdmin(targetPharmacyId()) || isTenantStorekeeper(targetPharmacyId()) || isTenantCashier(targetPharmacyId());
+      allow delete: if isSuperAdmin() || isTenantAdmin(targetPharmacyId());
+    }
+
+    match /Products/{productId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isSuperAdmin() || isTenantAdmin(targetPharmacyId()) || isTenantStorekeeper(targetPharmacyId()) || isTenantCashier(targetPharmacyId());
+      allow delete: if isSuperAdmin() || isTenantAdmin(targetPharmacyId());
+    }
+
+    match /stocks/{stockId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isSuperAdmin() || isTenantAdmin(targetPharmacyId()) || isTenantStorekeeper(targetPharmacyId()) || isTenantCashier(targetPharmacyId());
+      allow delete: if isSuperAdmin() || isTenantAdmin(targetPharmacyId());
+    }
+
+    match /batches/{batchId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isSuperAdmin() || isTenantAdmin(targetPharmacyId()) || isTenantStorekeeper(targetPharmacyId()) || isTenantCashier(targetPharmacyId());
+      allow delete: if isSuperAdmin() || isTenantAdmin(targetPharmacyId());
+    }
+
+    // ===============================================================
+    // Root Purchasing: purchases & suppliers
+    // ===============================================================
+
+    match /purchases/{purchaseId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isSuperAdmin() || isTenantAdmin(targetPharmacyId()) || isTenantStorekeeper(targetPharmacyId());
+      allow delete: if isSuperAdmin() || isTenantAdmin(targetPharmacyId());
+    }
+
+    match /suppliers/{supplierId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isSuperAdmin() || isTenantAdmin(targetPharmacyId()) || isTenantStorekeeper(targetPharmacyId());
+      allow delete: if isSuperAdmin() || isTenantAdmin(targetPharmacyId());
+    }
+
+    // ===============================================================
+    // Root POS: sales & subcollections
+    // ===============================================================
+
+    match /sales/{saleId} {
+      allow read: if isAuthenticated();
+      allow create: if isSuperAdmin() || isTenantAdmin(targetPharmacyId()) || isTenantCashier(targetPharmacyId());
+      allow update, delete: if isSuperAdmin();
+    }
+
+    match /sales/{saleId}/{allSubcollections=**} {
+      allow read: if isAuthenticated();
+      allow create: if isSuperAdmin() ||
+        isTenantAdmin(targetPharmacyId()) ||
+        isTenantCashier(targetPharmacyId()) ||
+        (exists(/databases/$(database)/documents/sales/$(saleId)) && (
+          isTenantAdmin(get(/databases/$(database)/documents/sales/$(saleId)).data.get('pharmacy_id', '')) ||
+          isTenantCashier(get(/databases/$(database)/documents/sales/$(saleId)).data.get('pharmacy_id', ''))
+        ));
+      allow update, delete: if isSuperAdmin();
+    }
+
+    // ===============================================================
+    // Root Cash Drawer Shifts: shifts
+    // ===============================================================
+
+    match /shifts/{shiftId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isSuperAdmin() || isTenantAdmin(targetPharmacyId()) || isTenantCashier(targetPharmacyId());
+      allow delete: if isSuperAdmin() || isTenantAdmin(targetPharmacyId());
+    }
+
+    // ===============================================================
+    // Root Audit & Adjustments: stock_adjustments & approval_logs
+    // ===============================================================
+
+    match /stock_adjustments/{adjustmentId} {
+      allow read: if isAuthenticated();
+      allow create: if isSuperAdmin() || isTenantAdmin(targetPharmacyId()) || isTenantStorekeeper(targetPharmacyId());
+      allow update, delete: if isSuperAdmin();
+    }
+
+    match /approval_logs/{logId} {
+      allow read: if isAuthenticated();
+      allow create: if isAuthenticated();
+      allow update, delete: if isSuperAdmin();
+    }
+
+    // ===============================================================
+    // Root Settings & Notifications & Device Tokens
+    // ===============================================================
+
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin() || isTenantAdmin(targetPharmacyId());
+    }
+
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated();
+    }
+
+    match /device_tokens/{userId} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin() || isOwner(userId);
+    }
+
+    // ===============================================================
+    // Collection Group Queries
+    // ===============================================================
+
+    match /{path=**}/staff/{staffId} {
+      allow read: if isAuthenticated();
+    }
+
+    match /{path=**}/cashiers/{cashierId} {
+      allow read: if isAuthenticated();
+    }
+
+    match /{path=**}/storekeepers/{storekeeperId} {
+      allow read: if isAuthenticated();
+    }
+
+    // ===============================================================
+    // Fallback: Super Admin Unconditional Access Everywhere
+    // ===============================================================
+
+    match /{document=**} {
+      allow read, write: if isSuperAdmin();
+    }
+  }
+}

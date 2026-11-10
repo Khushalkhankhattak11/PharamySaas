@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "531983043265",
+    "project_id": "pharmsaas",
+    "storage_bucket": "pharmsaas.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:531983043265:android:25e344e93b9d748c576240",
+        "android_client_info": {
+          "package_name": "com.example.pharmcysas"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "531983043265-ilqlsqcds5fthfnvl36q52dn2scrcv09.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyDHtPZzV6CRXXds0KXnJmVXiHYD4BdHc7c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "531983043265-ilqlsqcds5fthfnvl36q52dn2scrcv09.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

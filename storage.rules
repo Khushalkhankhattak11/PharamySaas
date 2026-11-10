@@ -1,0 +1,44 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Pharmacy license and verification documents
+    // Restricted to authenticated users, max 10MB, safe mime types
+    match /pharmacy-docs/{allPaths=**} {
+      allow read: if isAuthenticated();
+      allow write: if isAuthenticated() &&
+        request.resource.size < 10 * 1024 * 1024 &&
+        (request.resource.contentType.matches('application/pdf') ||
+         request.resource.contentType.matches('image/.*') ||
+         request.resource.contentType.matches('application/octet-stream'));
+    }
+
+    // Pharmacy public logos and branding
+    // Readable for UI, uploaded with max 5MB image limit
+    match /pharmacy-logos/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() &&
+        request.resource.size < 5 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/.*');
+    }
+
+    // Medicine product photos and batch images
+    match /pharmacies/{pharmacyId}/medicines/{allPaths=**} {
+      allow read: if true;
+      allow write: if isAuthenticated() &&
+        request.resource.size < 10 * 1024 * 1024 &&
+        request.resource.contentType.matches('image/.*');
+    }
+
+    // Default deny for all other paths
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}
+
