@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../shared/models/notification_model.dart';
@@ -170,76 +171,114 @@ class _NotificationTile extends ConsumerWidget {
         icon = LucideIcons.info;
     }
 
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: notif.isRead ? tokens.colors.card : tokens.colors.track,
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
         borderRadius: BorderRadius.circular(AppRadiusTokens.tile),
-        border: Border.all(
-          color: notif.isRead
-              ? tokens.colors.line
-              : iconColor.withValues(alpha: 0.3),
-        ),
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Container(
-            width: 36,
-            height: 36,
-            decoration: BoxDecoration(
-              color: iconColor.withValues(alpha: 0.15),
-              shape: BoxShape.circle,
+        onTap: () {
+          if (!notif.isRead) {
+            ref
+                .read(notificationsActionControllerProvider.notifier)
+                .markAsRead(notif.id);
+          }
+          if (notif.medicineId != null && notif.medicineId!.isNotEmpty) {
+            context.push('/inventory/${notif.medicineId}');
+          }
+        },
+        child: Container(
+          padding: const EdgeInsets.all(14),
+          decoration: BoxDecoration(
+            color: notif.isRead ? tokens.colors.card : tokens.colors.track,
+            borderRadius: BorderRadius.circular(AppRadiusTokens.tile),
+            border: Border.all(
+              color: notif.isRead
+                  ? tokens.colors.line
+                  : iconColor.withValues(alpha: 0.3),
             ),
-            child: Icon(icon, size: 18, color: iconColor),
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                width: 36,
+                height: 36,
+                decoration: BoxDecoration(
+                  color: iconColor.withValues(alpha: 0.15),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(icon, size: 18, color: iconColor),
+              ),
+              const SizedBox(width: 14),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      children: [
+                        Expanded(
+                          child: Text(
+                            notif.title,
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight:
+                                  notif.isRead ? FontWeight.w600 : FontWeight.w800,
+                              color: tokens.colors.ink,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          notif.createdAt.toString().split(' ').first,
+                          style:
+                              TextStyle(fontSize: 11, color: tokens.colors.muted),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
                     Text(
-                      notif.title,
+                      notif.message,
                       style: TextStyle(
-                        fontSize: 14,
-                        fontWeight:
-                            notif.isRead ? FontWeight.w600 : FontWeight.w800,
-                        color: tokens.colors.ink,
+                          fontSize: 13, color: tokens.colors.muted, height: 1.4),
+                    ),
+                    if (notif.medicineId != null && notif.medicineId!.isNotEmpty) ...[
+                      const SizedBox(height: 6),
+                      Row(
+                        children: [
+                          Icon(LucideIcons.arrowUpRight, size: 13, color: tokens.colors.brand1),
+                          const SizedBox(width: 4),
+                          Text(
+                            'View medicine inventory & batches',
+                            style: TextStyle(
+                              fontSize: 11.5,
+                              fontWeight: FontWeight.w600,
+                              color: tokens.colors.brand1,
+                            ),
+                          ),
+                        ],
                       ),
-                    ),
-                    Text(
-                      notif.createdAt.toString().split(' ').first,
-                      style:
-                          TextStyle(fontSize: 11, color: tokens.colors.muted),
-                    ),
+                    ],
                   ],
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  notif.message,
-                  style: TextStyle(
-                      fontSize: 13, color: tokens.colors.muted, height: 1.4),
+              ),
+              if (!notif.isRead) ...[
+                const SizedBox(width: 8),
+                IconButton(
+                  icon: const Icon(LucideIcons.check, size: 16),
+                  color: tokens.colors.muted,
+                  tooltip: 'Mark as read',
+                  onPressed: () {
+                    ref
+                        .read(notificationsActionControllerProvider.notifier)
+                        .markAsRead(notif.id);
+                  },
                 ),
               ],
-            ),
+            ],
           ),
-          if (!notif.isRead) ...[
-            const SizedBox(width: 8),
-            IconButton(
-              icon: const Icon(LucideIcons.check, size: 16),
-              color: tokens.colors.muted,
-              tooltip: 'Mark as read',
-              onPressed: () {
-                ref
-                    .read(notificationsActionControllerProvider.notifier)
-                    .markAsRead(notif.id);
-              },
-            ),
-          ],
-        ],
+        ),
       ),
     );
   }

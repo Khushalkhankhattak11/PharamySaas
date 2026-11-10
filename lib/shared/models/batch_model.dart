@@ -85,7 +85,7 @@ class BatchModel {
   BatchExpiryStatus get expiryStatus {
     final days = daysUntilExpiry;
     if (days < 0) return BatchExpiryStatus.expired;
-    if (days <= 30) return BatchExpiryStatus.critical30;
+    if (days <= 10) return BatchExpiryStatus.critical30;
     if (days <= 90) return BatchExpiryStatus.warning90;
     return BatchExpiryStatus.fresh;
   }

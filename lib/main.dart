@@ -51,15 +51,25 @@ class PharmaCareApp extends ConsumerWidget {
     final presetId = ref.watch(themePresetProvider);
     final customColor = ref.watch(customBrandColorProvider);
 
-    final lightTokens = AppColorsTokens.getById(presetId, isDark: false, customColor: customColor);
-    final darkTokens = AppColorsTokens.getById(presetId, isDark: true, customColor: customColor);
+    final selectedPreset = AppColorsTokens.getPreset(presetId, customColor: customColor);
+
+    final lightTokens = selectedPreset.isDark
+        ? AppColorsTokens.getById(presetId, isDark: false, customColor: customColor)
+        : selectedPreset;
+    final darkTokens = selectedPreset.isDark
+        ? selectedPreset
+        : AppColorsTokens.getById(presetId, isDark: true, customColor: customColor);
+
+    final effectiveThemeMode = (selectedPreset.isDark && themeMode != ThemeMode.dark)
+        ? ThemeMode.dark
+        : themeMode;
 
     return MaterialApp.router(
       title: Env.appName,
       debugShowCheckedModeBanner: false,
       theme: AppTheme.buildTheme(lightTokens, isDark: false),
       darkTheme: AppTheme.buildTheme(darkTokens, isDark: true),
-      themeMode: themeMode,
+      themeMode: effectiveThemeMode,
       routerConfig: router,
     );
   }

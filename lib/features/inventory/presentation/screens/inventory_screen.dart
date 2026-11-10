@@ -102,7 +102,7 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
     final filterOptions = [
       {'label': 'All Medicines', 'id': 'all'},
       {'label': 'Low Stock', 'id': 'low_stock'},
-      {'label': 'Expiring Soon (<=90d)', 'id': 'expiring'},
+      {'label': 'Expiring Soon (<=10d)', 'id': 'expiring'},
       {'label': 'Expired', 'id': 'expired'},
       {'label': 'Inactive', 'id': 'inactive'},
     ];

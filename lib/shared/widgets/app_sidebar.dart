@@ -5,7 +5,7 @@ import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/tokens.dart';
 import '../../features/auth/presentation/controllers/auth_controller.dart';
 import '../../shared/models/user_role.dart';
-import 'plan_card.dart';
+import 'theme_picker_dialog.dart';
 
 class NavItemData {
   final String title;
@@ -42,6 +42,7 @@ class AppSidebar extends ConsumerWidget {
         NavItemData(title: 'Pending approvals', icon: LucideIcons.checkSquare, route: '/super-admin/approvals', group: 'Platform'),
         NavItemData(title: 'All pharmacies', icon: LucideIcons.building, route: '/super-admin/pharmacies', group: 'Platform'),
         NavItemData(title: 'Notifications', icon: LucideIcons.bell, route: '/notifications', group: 'System'),
+        NavItemData(title: 'Theme', icon: LucideIcons.palette, route: 'action:theme', group: 'System'),
         NavItemData(title: 'Settings', icon: LucideIcons.settings, route: '/settings', group: 'System'),
       ];
     }
@@ -54,6 +55,7 @@ class AppSidebar extends ConsumerWidget {
         NavItemData(title: 'QR labels', icon: LucideIcons.qrCode, route: '/qr-setup', group: 'Inventory'),
         NavItemData(title: 'Reports', icon: LucideIcons.barChart2, route: '/reports', group: 'Inventory'),
         NavItemData(title: 'Notifications', icon: LucideIcons.bell, route: '/notifications', group: 'System'),
+        NavItemData(title: 'Theme', icon: LucideIcons.palette, route: 'action:theme', group: 'System'),
         NavItemData(title: 'Settings', icon: LucideIcons.settings, route: '/settings', group: 'System'),
       ];
     }
@@ -65,6 +67,7 @@ class AppSidebar extends ConsumerWidget {
         NavItemData(title: 'Medicines', icon: LucideIcons.package, route: '/inventory', group: 'Inventory'),
         NavItemData(title: 'Medicine lookup', icon: LucideIcons.search, route: '/medicine-lookup', group: 'Inventory'),
         NavItemData(title: 'Notifications', icon: LucideIcons.bell, route: '/notifications', group: 'System'),
+        NavItemData(title: 'Theme', icon: LucideIcons.palette, route: 'action:theme', group: 'System'),
         NavItemData(title: 'Settings', icon: LucideIcons.settings, route: '/settings', group: 'System'),
       ];
     }
@@ -80,6 +83,7 @@ class AppSidebar extends ConsumerWidget {
       NavItemData(title: 'Suppliers', icon: LucideIcons.truck, route: '/suppliers', group: 'Inventory'),
       NavItemData(title: 'Reports', icon: LucideIcons.barChart2, route: '/reports', group: 'Admin'),
       NavItemData(title: 'Staff', icon: LucideIcons.users, route: '/staff', group: 'Admin'),
+      NavItemData(title: 'Theme', icon: LucideIcons.palette, route: 'action:theme', group: 'Admin'),
       NavItemData(title: 'Settings', icon: LucideIcons.settings, route: '/settings', group: 'Admin'),
     ];
   }
@@ -177,13 +181,6 @@ class AppSidebar extends ConsumerWidget {
               children: _buildNavGroupWidgets(context, navItems),
             ),
           ),
-          // Plan Card at the bottom (Admin only, when not collapsed)
-          if (role.isAdmin && !isCollapsed) ...[
-            const SizedBox(height: 16),
-            PlanCard(
-              onManage: onManagePlan,
-            ),
-          ],
           const SizedBox(height: 12),
           // Prominent Logout button
           _buildLogoutButton(context, ref, tokens),
@@ -311,10 +308,12 @@ class AppSidebar extends ConsumerWidget {
         );
       }
 
-      final isActive = currentRoute == item.route ||
-          (item.route != '/dashboard' &&
-              item.route != '/super-admin' &&
-              currentRoute.startsWith(item.route));
+      final isAction = item.route.startsWith('action:');
+      final isActive = !isAction &&
+          (currentRoute == item.route ||
+              (item.route != '/dashboard' &&
+                  item.route != '/super-admin' &&
+                  currentRoute.startsWith(item.route)));
 
       widgets.add(
         _NavTile(
@@ -322,7 +321,9 @@ class AppSidebar extends ConsumerWidget {
           isActive: isActive,
           isCollapsed: isCollapsed,
           onTap: () {
-            if (currentRoute != item.route) {
+            if (item.route == 'action:theme') {
+              showThemePickerDialog(context);
+            } else if (currentRoute != item.route) {
               context.go(item.route);
             }
           },

@@ -31,6 +31,8 @@ class _PlanUpgradeDialogState extends ConsumerState<PlanUpgradeDialog> {
   Widget build(BuildContext context) {
     final pharmacyAsync = ref.watch(currentPharmacyProvider);
     final pharmacy = pharmacyAsync.value;
+    final currentProfile = ref.watch(currentProfileProvider).valueOrNull;
+    final isOwner = currentProfile?.role.isAdmin ?? false;
 
     final activePlanId = pharmacy?.plan ?? 'Standard';
     final requestedPlan = pharmacy?.requestedPlan;
@@ -102,6 +104,36 @@ class _PlanUpgradeDialogState extends ConsumerState<PlanUpgradeDialog> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
+                    // View-only banner for Cashier and Storekeeper
+                    if (!isOwner) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEFF6FF),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFBFDBFE)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(LucideIcons.shieldAlert, size: 18, color: Color(0xFF2563EB)),
+                            const SizedBox(width: 10),
+                            Expanded(
+                              child: Text(
+                                'View Only Access: You are signed in as ${currentProfile?.role.label ?? 'Staff'}. '
+                                'Only the Pharmacy Owner has permission to request plan upgrades and manage subscription tiers.',
+                                style: const TextStyle(
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.w600,
+                                  color: Color(0xFF1E40AF),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 16),
+                    ],
+
                     // Pending Upgrade Banner
                     if (isPending && requestedPlan != null) ...[
                       Container(
@@ -170,42 +202,44 @@ class _PlanUpgradeDialogState extends ConsumerState<PlanUpgradeDialog> {
                       const SizedBox(height: 20),
                     ],
 
-                    // Duration selector for upgrade requests
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(10),
-                        border: Border.all(color: const Color(0xFFE2E8F0)),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(LucideIcons.calendar, size: 16, color: Color(0xFF64748B)),
-                          const SizedBox(width: 10),
-                          const Text(
-                            'Desired Upgrade Period:',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-                          ),
-                          const Spacer(),
-                          DropdownButtonHideUnderline(
-                            child: DropdownButton<int>(
-                              value: _selectedDurationDays,
-                              isDense: true,
-                              items: const [
-                                DropdownMenuItem(value: 30, child: Text('1 Month (30 Days)')),
-                                DropdownMenuItem(value: 90, child: Text('3 Months (90 Days)')),
-                                DropdownMenuItem(value: 180, child: Text('6 Months (180 Days)')),
-                                DropdownMenuItem(value: 365, child: Text('1 Year (365 Days) — Recommended')),
-                              ],
-                              onChanged: (val) {
-                                if (val != null) setState(() => _selectedDurationDays = val);
-                              },
+                    // Duration selector for upgrade requests (Owner only)
+                    if (isOwner) ...[
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF8FAFC),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(color: const Color(0xFFE2E8F0)),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(LucideIcons.calendar, size: 16, color: Color(0xFF64748B)),
+                            const SizedBox(width: 10),
+                            const Text(
+                              'Desired Upgrade Period:',
+                              style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
                             ),
-                          ),
-                        ],
+                            const Spacer(),
+                            DropdownButtonHideUnderline(
+                              child: DropdownButton<int>(
+                                value: _selectedDurationDays,
+                                isDense: true,
+                                items: const [
+                                  DropdownMenuItem(value: 30, child: Text('1 Month (30 Days)')),
+                                  DropdownMenuItem(value: 90, child: Text('3 Months (90 Days)')),
+                                  DropdownMenuItem(value: 180, child: Text('6 Months (180 Days)')),
+                                  DropdownMenuItem(value: 365, child: Text('1 Year (365 Days) — Recommended')),
+                                ],
+                                onChanged: (val) {
+                                  if (val != null) setState(() => _selectedDurationDays = val);
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ),
-                    const SizedBox(height: 24),
+                      const SizedBox(height: 24),
+                    ],
 
                     // Tier Cards Matrix
                     LayoutBuilder(
@@ -221,6 +255,7 @@ class _PlanUpgradeDialogState extends ConsumerState<PlanUpgradeDialog> {
                                   isActive: plan.id.toLowerCase() == activePlanId.toLowerCase(),
                                   isRequested: isPending && plan.id.toLowerCase() == requestedPlan?.toLowerCase(),
                                   pharmacy: pharmacy,
+                                  isOwner: isOwner,
                                 ),
                               );
                             }).toList(),
@@ -238,6 +273,7 @@ class _PlanUpgradeDialogState extends ConsumerState<PlanUpgradeDialog> {
                                   isActive: plan.id.toLowerCase() == activePlanId.toLowerCase(),
                                   isRequested: isPending && plan.id.toLowerCase() == requestedPlan?.toLowerCase(),
                                   pharmacy: pharmacy,
+                                  isOwner: isOwner,
                                 ),
                               ),
                             );
@@ -260,6 +296,7 @@ class _PlanUpgradeDialogState extends ConsumerState<PlanUpgradeDialog> {
     required bool isActive,
     required bool isRequested,
     required PharmacyModel? pharmacy,
+    required bool isOwner,
   }) {
     final isSubmittingThis = _submittingPlanId == plan.id;
 
@@ -519,22 +556,47 @@ class _PlanUpgradeDialogState extends ConsumerState<PlanUpgradeDialog> {
                           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
                         ),
                       )
-                    : AppButton(
-                        text: isSubmittingThis ? 'Submitting...' : 'Request Upgrade',
-                        icon: isSubmittingThis
-                            ? const SizedBox(
-                                width: 14,
-                                height: 14,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                    : (!isOwner
+                        ? Container(
+                            padding: const EdgeInsets.symmetric(vertical: 12),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFFF1F5F9),
+                              borderRadius: BorderRadius.circular(10),
+                              border: Border.all(color: const Color(0xFFE2E8F0)),
+                            ),
+                            alignment: Alignment.center,
+                            child: const Row(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                Icon(LucideIcons.lock, size: 14, color: Color(0xFF94A3B8)),
+                                SizedBox(width: 6),
+                                Text(
+                                  'Owner Only Upgrade',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w700,
+                                    color: Color(0xFF94A3B8),
+                                  ),
                                 ),
-                              )
-                            : const Icon(LucideIcons.arrowUpRight, size: 15, color: Colors.white),
-                        onPressed: isSubmittingThis
-                            ? null
-                            : () => _requestUpgrade(context, plan.id),
-                      )),
+                              ],
+                            ),
+                          )
+                        : AppButton(
+                            text: isSubmittingThis ? 'Submitting...' : 'Request Upgrade',
+                            icon: isSubmittingThis
+                                ? const SizedBox(
+                                    width: 14,
+                                    height: 14,
+                                    child: CircularProgressIndicator(
+                                      strokeWidth: 2,
+                                      valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                                    ),
+                                  )
+                                : const Icon(LucideIcons.arrowUpRight, size: 15, color: Colors.white),
+                            onPressed: isSubmittingThis
+                                ? null
+                                : () => _requestUpgrade(context, plan.id),
+                          ))),
           ),
         ],
       ),
@@ -542,6 +604,20 @@ class _PlanUpgradeDialogState extends ConsumerState<PlanUpgradeDialog> {
   }
 
   Future<void> _requestUpgrade(BuildContext context, String planId) async {
+    final currentProfile = ref.read(currentProfileProvider).valueOrNull;
+    final isOwner = currentProfile?.role.isAdmin ?? false;
+    if (!isOwner) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Permission denied: Only the Pharmacy Owner can request plan upgrades.'),
+            backgroundColor: AppColorsTokens.danger,
+          ),
+        );
+      }
+      return;
+    }
+
     setState(() => _submittingPlanId = planId);
     try {
       await ref

@@ -571,6 +571,17 @@ class AppColorsTokens extends ThemeExtension<AppColorsTokens> {
     }
   }
 
+  /// Returns the exact preset by ID without forcing brightness conversion
+  static AppColorsTokens getPreset(String id, {Color? customColor}) {
+    if (id.toLowerCase() == 'custom') {
+      return deriveCustom(customColor ?? const Color(0xFF1D4ED8), isDark: false);
+    }
+    return allPresets.firstWhere(
+      (p) => p.id.toLowerCase() == id.toLowerCase(),
+      orElse: () => ocean,
+    );
+  }
+
   /// Resolves an AppColorsTokens preset by ID, dynamically honoring requested brightness
   static AppColorsTokens getById(String id, {bool isDark = false, Color? customColor}) {
     if (id.toLowerCase() == 'custom') {

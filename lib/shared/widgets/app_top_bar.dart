@@ -8,7 +8,7 @@ import '../../features/auth/presentation/controllers/auth_controller.dart';
 import 'app_search_field.dart';
 import 'avatar_menu.dart';
 import 'notification_bell.dart';
-import 'theme_picker_pill.dart';
+import 'theme_picker_dialog.dart';
 
 class AppTopBar extends ConsumerWidget {
   final String title;
@@ -29,8 +29,8 @@ class AppTopBar extends ConsumerWidget {
     final tokens = context.tokens;
     final screenWidth = MediaQuery.of(context).size.width;
     final isPhone = screenWidth < 600;
-    final isTablet = screenWidth >= 600 && screenWidth < 1024;
     final location = GoRouterState.of(context).matchedLocation;
+    final isDashboard = location == '/dashboard';
     final currentProfile = ref.watch(currentProfileProvider).valueOrNull;
     final isSuperAdmin = location.startsWith('/super-admin') ||
         (currentProfile?.role.isSuperAdmin ?? false);
@@ -38,45 +38,184 @@ class AppTopBar extends ConsumerWidget {
 
     final fullName = isSuperAdmin
         ? (currentProfile?.fullName ?? 'Platform Super Admin')
-        : (currentProfile?.fullName ?? 'Pharmacy Owner');
+        : (currentProfile?.fullName ?? 'Shahriar');
     final roleName = isSuperAdmin
         ? 'Super Admin'
-        : (currentProfile?.role.label ?? 'Administrator');
+        : (currentProfile?.role.label ?? 'Pharmacy admin');
 
+    // 1. Dashboard Top Bar: Clean header with user info and quick theme toggle
+    if (isDashboard) {
+      return Container(
+        margin: const EdgeInsets.only(bottom: 20),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            // Left column: Title + (Bell, Avatar, Name/Role) directly underneath
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontSize: isPhone ? 22 : 26,
+                    fontWeight: FontWeight.w800,
+                    color: tokens.colors.ink,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    NotificationBell(
+                      unreadCount: unreadNotificationsCount,
+                      onTap: () => context.go('/notifications'),
+                    ),
+                    const SizedBox(width: 12),
+                    AvatarMenu(
+                      fullName: fullName,
+                      role: roleName,
+                      showText: !isPhone,
+                      onTap: () => context.go('/settings'),
+                    ),
+                  ],
+                ),
+              ],
+            ),
+
+            // Right controls: Clean Theme palette launcher + Light/Dark toggle
+            Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                // Quick Theme Picker dialog launcher
+                Tooltip(
+                  message: 'Themes & Appearance',
+                  child: Container(
+                    width: 40,
+                    height: 40,
+                    decoration: BoxDecoration(
+                      color: tokens.colors.card,
+                      shape: BoxShape.circle,
+                      border: Border.all(color: tokens.colors.line, width: 1),
+                      boxShadow: [tokens.colors.shadow],
+                    ),
+                    child: Material(
+                      color: Colors.transparent,
+                      child: InkWell(
+                        borderRadius: BorderRadius.circular(20),
+                        onTap: () => showThemePickerDialog(context),
+                        child: Icon(
+                          LucideIcons.palette,
+                          size: 18,
+                          color: tokens.colors.brand1,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+
+                // 40px circular light/dark toggle
+                Container(
+                  width: 40,
+                  height: 40,
+                  decoration: BoxDecoration(
+                    color: tokens.colors.card,
+                    shape: BoxShape.circle,
+                    border: Border.all(color: tokens.colors.line, width: 1),
+                    boxShadow: [tokens.colors.shadow],
+                  ),
+                  child: Material(
+                    color: Colors.transparent,
+                    child: InkWell(
+                      borderRadius: BorderRadius.circular(20),
+                      onTap: () {
+                        ref.read(themeModeProvider.notifier).toggleTheme();
+                      },
+                      child: Icon(
+                        themeMode == ThemeMode.dark ? LucideIcons.sun : LucideIcons.moon,
+                        size: 18,
+                        color: tokens.colors.ink,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
+      );
+    }
+
+    // 2. Standard Top Bar for other screens (POS, Inventory, Reports, Staff, Settings, SuperAdmin)
     return Container(
       margin: const EdgeInsets.only(bottom: 20),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.center,
         children: [
-          // Page title: 26/800
-          Expanded(
-            child: Text(
-              title,
-              style: TextStyle(
-                fontSize: isPhone ? 22 : 26,
-                fontWeight: FontWeight.w800,
-                color: tokens.colors.ink,
-                letterSpacing: -0.3,
-              ),
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
+          // Page title
+          Text(
+            title,
+            style: TextStyle(
+              fontSize: isPhone ? 20 : 26,
+              fontWeight: FontWeight.w800,
+              color: tokens.colors.ink,
+              letterSpacing: -0.3,
             ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 16),
+
           // Search Field (desktop & tablet only, not shown on super-admin)
           if (!isPhone && !isSuperAdmin) ...[
-            customSearchField ??
-                AppSearchField(
-                  maxWidth: isTablet ? 260 : 460,
-                  placeholder: 'Search medicines, invoices, batches...',
+            Expanded(
+              child: Align(
+                alignment: Alignment.centerLeft,
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 380),
+                  child: customSearchField ??
+                      const AppSearchField(
+                        placeholder: 'Search medicines, invoices, batches...',
+                      ),
                 ),
+              ),
+            ),
             const SizedBox(width: 12),
+          ] else ...[
+            const Spacer(),
           ],
-          // Theme Picker pill group on desktop/tablet
-          if (!isPhone) ...[
-            const ThemePickerPill(),
-            const SizedBox(width: 8),
-          ],
+
+          // Quick Theme Palette button
+          Tooltip(
+            message: 'Themes & Appearance',
+            child: Container(
+              width: 40,
+              height: 40,
+              decoration: BoxDecoration(
+                color: tokens.colors.card,
+                shape: BoxShape.circle,
+                border: Border.all(color: tokens.colors.line, width: 1),
+                boxShadow: [tokens.colors.shadow],
+              ),
+              child: Material(
+                color: Colors.transparent,
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(20),
+                  onTap: () => showThemePickerDialog(context),
+                  child: Icon(
+                    LucideIcons.palette,
+                    size: 18,
+                    color: tokens.colors.brand1,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(width: 8),
+
           // 44px circular notification button with 9px red dot (pharmacy roles)
           if (!isSuperAdmin) ...[
             NotificationBell(
@@ -85,7 +224,8 @@ class AppTopBar extends ConsumerWidget {
             ),
             const SizedBox(width: 8),
           ],
-          // 44px circular theme toggle
+
+          // 40px circular theme toggle
           Container(
             width: 40,
             height: 40,
@@ -111,6 +251,7 @@ class AppTopBar extends ConsumerWidget {
             ),
           ),
           const SizedBox(width: 10),
+
           // User block: 42px avatar + name 14/700 + role 12 muted
           AvatarMenu(
             fullName: fullName,
@@ -124,6 +265,7 @@ class AppTopBar extends ConsumerWidget {
               }
             },
           ),
+
           // Dedicated Sign Out button for Super Admin
           if (isSuperAdmin) ...[
             const SizedBox(width: 10),

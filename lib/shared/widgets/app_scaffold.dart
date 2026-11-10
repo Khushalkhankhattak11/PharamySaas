@@ -65,32 +65,29 @@ class AppScaffold extends ConsumerWidget {
 
               // Main content area
               Expanded(
-                child: Column(
-                  children: [
-                    // Top Bar
-                    AppTopBar(
-                      title: _getTitleFromRoute(location),
-                    ),
-
-                    // Content Canvas with key to reset scroll on route transition
-                    Expanded(
-                      child: SingleChildScrollView(
-                        key: ValueKey(location),
-                        padding: EdgeInsetsDirectional.fromSTEB(
-                          isDesktop ? 28 : 16,
-                          24,
-                          isDesktop ? 28 : 16,
-                          40,
-                        ),
-                        child: Center(
-                          child: ConstrainedBox(
-                            constraints: const BoxConstraints(maxWidth: 1400),
-                            child: child,
+                child: SingleChildScrollView(
+                  key: ValueKey(location),
+                  padding: EdgeInsetsDirectional.fromSTEB(
+                    isDesktop ? 28 : 16,
+                    20,
+                    isDesktop ? 28 : 16,
+                    40,
+                  ),
+                  child: Center(
+                    child: ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 1400),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          // Top Bar
+                          AppTopBar(
+                            title: _getTitleFromRoute(location),
                           ),
-                        ),
+                          child,
+                        ],
                       ),
                     ),
-                  ],
+                  ),
                 ),
               ),
             ],

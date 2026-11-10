@@ -65,7 +65,7 @@ class DashboardScreen extends ConsumerWidget {
               title: 'Good morning, ${profile?.fullName ?? 'Owner'} 👋',
               subtitle: summary.totalMedicines == 0 && summary.totalRevenue == 0
                   ? 'Welcome to your pharmacy workspace. Get started by adding medicines to your inventory or recording purchases.'
-                  : 'You have $lowStock medicines running low and $expiringSoon batches expiring within 90 days. Review them before peak hours.',
+                  : 'You have $lowStock medicines running low and $expiringSoon batches expiring within 10 days. Review them before opening hours.',
               statusText: 'All systems running',
               primaryButtonText: 'Generate report',
               onPrimaryAction: () => context.go('/reports'),
@@ -112,6 +112,7 @@ class DashboardScreen extends ConsumerWidget {
     required String currency,
     required DashboardSummaryModel summary,
   }) {
+    final tokens = context.tokens;
     final revenueSparkline = summary.monthlySpots.isNotEmpty
         ? summary.monthlySpots.map((s) => s.y).toList()
         : const [0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
@@ -120,54 +121,80 @@ class DashboardScreen extends ConsumerWidget {
         ? summary.weekSales.map((w) => w.amountK).toList()
         : const [0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0];
 
+    final isDark = tokens.colors.isDark;
+
     final cards = [
       KpiCard(
         label: 'Total revenue',
         value: '$currency ${summary.todaySales.toStringAsFixed(0)}',
-        badgeText: summary.todaySales > 0 ? '+100%' : 'Today',
-        icon: LucideIcons.trendingUp,
-        accentColor: AppColorsTokens.info, // #2563EB
+        badgeText: summary.todaySales > 0 ? '+18.4%' : 'Today',
+        icon: LucideIcons.dollarSign,
+        accentColor: tokens.colors.accent,
         sparklineData: revenueSparkline,
         onTap: () => context.go('/sales-history'),
       ),
-      KpiCard.pastel(
-        label: 'Medicines',
-        value: summary.totalMedicines.toString(),
-        badgeText: '${summary.totalUnitsInStock} units',
-        icon: LucideIcons.pill,
-        pastelColor: AppColorsTokens.lime,
-        sparklineData: [
-          (summary.totalMedicines * 0.8),
-          (summary.totalMedicines * 0.9),
-          summary.totalMedicines.toDouble(),
-        ],
-        onTap: () => context.go('/inventory'),
-      ),
-      KpiCard.pastel(
-        label: 'Sales today',
-        value: summary.todayInvoices.toString(),
-        badgeText: summary.todayInvoices > 0
-            ? '${summary.todayInvoices} bills'
-            : 'No sales',
-        icon: LucideIcons.shoppingBag,
-        pastelColor: AppColorsTokens.mint,
-        sparklineData: weekSparkline,
-        onTap: () => context.go('/sales-history'),
-      ),
+      isDark
+          ? KpiCard(
+              label: 'Medicines',
+              value: summary.totalMedicines.toString(),
+              badgeText: '+${summary.totalUnitsInStock}',
+              icon: LucideIcons.plus,
+              accentColor: tokens.colors.muted,
+              sparklineData: [
+                (summary.totalMedicines * 0.8),
+                (summary.totalMedicines * 0.9),
+                summary.totalMedicines.toDouble(),
+              ],
+              onTap: () => context.go('/inventory'),
+            )
+          : KpiCard.pastel(
+              label: 'Medicines',
+              value: summary.totalMedicines.toString(),
+              badgeText: '+${summary.totalUnitsInStock}',
+              icon: LucideIcons.plus,
+              pastelColor: tokens.colors.pastel1,
+              sparklineData: [
+                (summary.totalMedicines * 0.8),
+                (summary.totalMedicines * 0.9),
+                summary.totalMedicines.toDouble(),
+              ],
+              onTap: () => context.go('/inventory'),
+            ),
+      isDark
+          ? KpiCard(
+              label: 'Sales today',
+              value: summary.todayInvoices.toString(),
+              badgeText: summary.todayInvoices > 0
+                  ? '+9.2%'
+                  : '0',
+              icon: LucideIcons.shoppingBag,
+              accentColor: tokens.colors.muted,
+              sparklineData: weekSparkline,
+              onTap: () => context.go('/sales-history'),
+            )
+          : KpiCard.pastel(
+              label: 'Sales today',
+              value: summary.todayInvoices.toString(),
+              badgeText: summary.todayInvoices > 0
+                  ? '+9.2%'
+                  : '0',
+              icon: LucideIcons.shoppingBag,
+              pastelColor: tokens.colors.pastel2,
+              sparklineData: weekSparkline,
+              onTap: () => context.go('/sales-history'),
+            ),
       KpiCard(
         label: 'Low stock',
         value: summary.lowStockCount.toString(),
-        badgeText: summary.lowStockCount > 0 ? 'Check' : 'Optimal',
+        badgeText: 'Check',
         icon: LucideIcons.alertTriangle,
-        accentColor: summary.lowStockCount > 0
-            ? AppColorsTokens.amber
-            : AppColorsTokens.trendGreenText,
-        badgeTextColor: summary.lowStockCount > 0
-            ? AppColorsTokens.amberText
-            : AppColorsTokens.trendGreenText,
+        accentColor: AppColorsTokens.amber,
+        badgeTextColor: AppColorsTokens.amber,
         sparklineData: [
           summary.lowStockCount.toDouble(),
-          summary.lowStockCount.toDouble()
+          summary.lowStockCount.toDouble() * 1.05,
+          summary.lowStockCount.toDouble() * 0.95,
+          summary.lowStockCount.toDouble(),
         ],
         onTap: () {
           ref.read(inventoryFilterProvider.notifier).state = 'low_stock';
@@ -177,17 +204,14 @@ class DashboardScreen extends ConsumerWidget {
       KpiCard(
         label: 'Expiring soon',
         value: summary.expiringSoonCount.toString(),
-        badgeText: summary.expiringSoonCount > 0 ? '90 days' : 'None',
-        icon: LucideIcons.clock,
-        accentColor: summary.expiringSoonCount > 0
-            ? AppColorsTokens.orange
-            : AppColorsTokens.trendGreenText,
-        badgeTextColor: summary.expiringSoonCount > 0
-            ? AppColorsTokens.orangeText
-            : AppColorsTokens.trendGreenText,
+        badgeText: '10 days',
+        icon: LucideIcons.hourglass,
+        accentColor: AppColorsTokens.orange,
+        badgeTextColor: AppColorsTokens.orange,
         sparklineData: [
           summary.expiringSoonCount.toDouble(),
-          summary.expiringSoonCount.toDouble()
+          summary.expiringSoonCount.toDouble() * 1.1,
+          summary.expiringSoonCount.toDouble() * 1.05,
         ],
         onTap: () {
           ref.read(inventoryFilterProvider.notifier).state = 'expiring';
@@ -197,17 +221,15 @@ class DashboardScreen extends ConsumerWidget {
       KpiCard(
         label: 'Expired',
         value: summary.expiredCount.toString(),
-        badgeText: summary.expiredCount > 0 ? 'Disposal' : 'Zero',
-        icon: LucideIcons.trash2,
-        accentColor: summary.expiredCount > 0
-            ? AppColorsTokens.danger
-            : AppColorsTokens.trendGreenText,
-        badgeTextColor: summary.expiredCount > 0
-            ? AppColorsTokens.danger
-            : AppColorsTokens.trendGreenText,
+        badgeText: 'Act now',
+        icon: LucideIcons.x,
+        accentColor: AppColorsTokens.danger,
+        badgeTextColor: AppColorsTokens.danger,
         sparklineData: [
           summary.expiredCount.toDouble(),
-          summary.expiredCount.toDouble()
+          summary.expiredCount.toDouble() * 1.2,
+          summary.expiredCount.toDouble() * 0.8,
+          summary.expiredCount.toDouble(),
         ],
         onTap: () {
           ref.read(inventoryFilterProvider.notifier).state = 'expired';
@@ -216,14 +238,12 @@ class DashboardScreen extends ConsumerWidget {
       ),
     ];
 
-    // Responsive adaptive card grid based on parent container constraints
+    // Responsive adaptive card grid: 3x2 on desktop & tablet (matching reference screenshots)
     return LayoutBuilder(
       builder: (context, constraints) {
         final availableWidth = constraints.maxWidth;
         int crossAxisCount;
-        if (availableWidth >= 1150) {
-          crossAxisCount = 6;
-        } else if (availableWidth >= 780) {
+        if (availableWidth >= 800) {
           crossAxisCount = 3;
         } else if (availableWidth >= 480) {
           crossAxisCount = 2;
@@ -231,7 +251,7 @@ class DashboardScreen extends ConsumerWidget {
           crossAxisCount = 1;
         }
 
-        const spacing = 12.0;
+        const spacing = 14.0;
         final totalSpacing = spacing * (crossAxisCount - 1);
         final cardWidth = (availableWidth - totalSpacing) / crossAxisCount;
 

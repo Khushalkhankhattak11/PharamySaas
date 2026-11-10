@@ -20,8 +20,12 @@ class ThemeModeNotifier extends StateNotifier<ThemeMode> {
     try {
       final prefs = await SharedPreferences.getInstance();
       final savedIndex = prefs.getInt(_kThemeModeKey);
+      final savedPreset = prefs.getString(_kThemePresetKey);
       if (savedIndex != null && savedIndex >= 0 && savedIndex < ThemeMode.values.length) {
         state = ThemeMode.values[savedIndex];
+      } else if (savedPreset != null && savedPreset.isNotEmpty) {
+        final preset = AppColorsTokens.getPreset(savedPreset);
+        state = preset.isDark ? ThemeMode.dark : ThemeMode.light;
       }
     } catch (_) {
       // Default to light if preference reading fails
@@ -67,8 +71,17 @@ class ThemePresetNotifier extends StateNotifier<String> {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString(_kThemePresetKey, presetId);
+      final preset = AppColorsTokens.getPreset(presetId);
+      await prefs.setInt(_kThemeModeKey, (preset.isDark ? ThemeMode.dark : ThemeMode.light).index);
     } catch (_) {}
   }
+}
+
+/// Helper to apply a preset and immediately synchronize theme mode and persist preferences
+void applyThemePreset(WidgetRef ref, String presetId) {
+  final preset = AppColorsTokens.getPreset(presetId);
+  ref.read(themePresetProvider.notifier).setThemePreset(presetId);
+  ref.read(themeModeProvider.notifier).setThemeMode(preset.isDark ? ThemeMode.dark : ThemeMode.light);
 }
 
 /// Custom brand color for Enterprise brand derivation

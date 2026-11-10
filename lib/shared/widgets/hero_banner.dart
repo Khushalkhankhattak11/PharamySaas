@@ -147,7 +147,13 @@ class HeroBanner extends StatelessWidget {
     return Container(
       decoration: BoxDecoration(
         borderRadius: BorderRadius.circular(AppRadiusTokens.hero),
-        boxShadow: const [AppColorsTokens.heroShadow],
+        boxShadow: [
+          BoxShadow(
+            color: tokens.colors.brand2.withValues(alpha: 0.35),
+            blurRadius: 40,
+            offset: const Offset(0, 20),
+          ),
+        ],
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(AppRadiusTokens.hero),
@@ -156,13 +162,13 @@ class HeroBanner extends StatelessWidget {
             // Background gradients: Linear 120deg + Radial Glow
             Positioned.fill(
               child: Container(
-                decoration: const BoxDecoration(
+                decoration: BoxDecoration(
                   gradient: LinearGradient(
-                    begin: Alignment(-0.8, -0.6),
-                    end: Alignment(0.8, 0.6),
+                    begin: const Alignment(-0.8, -0.6),
+                    end: const Alignment(0.8, 0.6),
                     colors: [
-                      Color(0xFF0F766E),
-                      Color(0xFF064E4B),
+                      tokens.colors.brand1,
+                      tokens.colors.brand2,
                     ],
                   ),
                 ),
@@ -179,7 +185,7 @@ class HeroBanner extends StatelessWidget {
                     center: const Alignment(0.85, -0.2),
                     radius: 0.85,
                     colors: [
-                      tokens.colors.glow.withValues(alpha: 0.45),
+                      tokens.colors.glow.withValues(alpha: 0.55),
                       Colors.transparent,
                     ],
                     stops: const [0.0, 0.6],

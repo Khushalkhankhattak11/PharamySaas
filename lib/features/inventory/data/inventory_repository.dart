@@ -101,7 +101,7 @@ class InventoryRepository {
       } else if (filter == 'low_stock') {
         list = list.where((m) => m.isActive && m.availableStock <= m.minStockLevel).toList();
       } else if (filter == 'expiring') {
-        final threshold = now.add(const Duration(days: 90));
+        final threshold = now.add(const Duration(days: 10));
         list = list.where((m) =>
             m.isActive &&
             m.nearestExpiry != null &&
@@ -530,7 +530,7 @@ class InventoryRepository {
     if (filter == 'low_stock') {
       list = list.where((m) => m.availableStock <= m.minStockLevel).toList();
     } else if (filter == 'expiring') {
-      final threshold = now.add(const Duration(days: 90));
+      final threshold = now.add(const Duration(days: 10));
       list = list.where((m) =>
           m.nearestExpiry != null &&
           m.nearestExpiry!.isBefore(threshold) &&

@@ -28,9 +28,9 @@ class AlertRow extends StatelessWidget {
   const AlertRow.expiringSoon({
     super.key,
     required this.count,
-    this.caption = 'Batches expiring within 30 days',
+    this.caption = 'Batches expiring within 10 days',
     this.onTap,
-  })  : title = 'Expiring in 30 days',
+  })  : title = 'Expiring in 10 days',
         alertColor = AppColorsTokens.orange; // #F97316
 
   const AlertRow.expired({

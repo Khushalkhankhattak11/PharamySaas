@@ -24,7 +24,7 @@ class SettingsScreen extends ConsumerStatefulWidget {
 
 class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final _formKey = GlobalKey<FormState>();
-  
+
   // Pharmacy Details Controllers
   final _nameController = TextEditingController();
   final _phoneController = TextEditingController();
@@ -54,17 +54,147 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     Color(0xFF334155), // Slate
   ];
 
-  static const List<({String id, String name, bool isDark, Color brand1, Color brand2, Color glow, Color bg, int requiredTier})> _themePresets = [
-    (id: 'ocean', name: 'Ocean', isDark: false, brand1: Color(0xFF1D4ED8), brand2: Color(0xFF0B2A6F), glow: Color(0xFF38BDF8), bg: Color(0xFFF3F8FF), requiredTier: 1),
-    (id: 'violet', name: 'Violet', isDark: false, brand1: Color(0xFF7C3AED), brand2: Color(0xFF3B1B8F), glow: Color(0xFFC084FC), bg: Color(0xFFF7F4FF), requiredTier: 3),
-    (id: 'midnight', name: 'Midnight', isDark: true, brand1: Color(0xFF0891B2), brand2: Color(0xFF0E2F63), glow: Color(0xFF22D3EE), bg: Color(0xFF070B16), requiredTier: 3),
-    (id: 'emerald', name: 'Emerald', isDark: false, brand1: Color(0xFF059669), brand2: Color(0xFF065F46), glow: Color(0xFF34D399), bg: Color(0xFFF2FAF5), requiredTier: 2),
-    (id: 'rose', name: 'Rose', isDark: false, brand1: Color(0xFFE11D48), brand2: Color(0xFF9F1239), glow: Color(0xFFFB7185), bg: Color(0xFFFFF5F7), requiredTier: 2),
-    (id: 'sunset', name: 'Sunset', isDark: false, brand1: Color(0xFFF97316), brand2: Color(0xFFB91C1C), glow: Color(0xFFFBBF24), bg: Color(0xFFFFF6EF), requiredTier: 3),
-    (id: 'graphite', name: 'Graphite', isDark: false, brand1: Color(0xFF1F2937), brand2: Color(0xFF0B1220), glow: Color(0xFF94A3B8), bg: Color(0xFFF6F7F9), requiredTier: 3),
-    (id: 'lagoon', name: 'Lagoon', isDark: false, brand1: Color(0xFF0D9488), brand2: Color(0xFF155E75), glow: Color(0xFF5EEAD4), bg: Color(0xFFEFFCFB), requiredTier: 3),
-    (id: 'forest', name: 'Forest', isDark: true, brand1: Color(0xFF16A34A), brand2: Color(0xFF14532D), glow: Color(0xFF4ADE80), bg: Color(0xFF07110C), requiredTier: 3),
-    (id: 'aurora', name: 'Aurora', isDark: true, brand1: Color(0xFFA855F7), brand2: Color(0xFF4C1D95), glow: Color(0xFFF0ABFC), bg: Color(0xFF0D0817), requiredTier: 3),
+  static const List<
+      ({
+        String id,
+        String name,
+        bool isDark,
+        Color brand1,
+        Color brand2,
+        Color glow,
+        Color bg,
+        int requiredTier
+      })> _themePresets = [
+    (
+      id: 'ocean',
+      name: 'Ocean',
+      isDark: false,
+      brand1: Color(0xFF0F766E),
+      brand2: Color(0xFF064E4B),
+      glow: Color(0xFF2BB5A8),
+      bg: Color(0xFFF4F9F8),
+      requiredTier: 1
+    ),
+    (
+      id: 'ocean',
+      name: 'Ocean',
+      isDark: false,
+      brand1: Color(0xFF1D4ED8),
+      brand2: Color(0xFF0B2A6F),
+      glow: Color(0xFF38BDF8),
+      bg: Color(0xFFF3F8FF),
+      requiredTier: 1
+    ),
+    (
+      id: 'violet',
+      name: 'Violet',
+      isDark: false,
+      brand1: Color(0xFF7C3AED),
+      brand2: Color(0xFF3B1B8F),
+      glow: Color(0xFFC084FC),
+      bg: Color(0xFFF7F4FF),
+      requiredTier: 3
+    ),
+    (
+      id: 'midnight',
+      name: 'Midnight',
+      isDark: true,
+      brand1: Color(0xFF0891B2),
+      brand2: Color(0xFF0E2F63),
+      glow: Color(0xFF22D3EE),
+      bg: Color(0xFF070B16),
+      requiredTier: 3
+    ),
+    (
+      id: 'emerald',
+      name: 'Emerald',
+      isDark: false,
+      brand1: Color(0xFF059669),
+      brand2: Color(0xFF065F46),
+      glow: Color(0xFF34D399),
+      bg: Color(0xFFF2FAF5),
+      requiredTier: 2
+    ),
+    (
+      id: 'rose',
+      name: 'Rose',
+      isDark: false,
+      brand1: Color(0xFFE11D48),
+      brand2: Color(0xFF9F1239),
+      glow: Color(0xFFFB7185),
+      bg: Color(0xFFFFF5F7),
+      requiredTier: 2
+    ),
+    (
+      id: 'sunset',
+      name: 'Sunset',
+      isDark: false,
+      brand1: Color(0xFFF97316),
+      brand2: Color(0xFFB91C1C),
+      glow: Color(0xFFFBBF24),
+      bg: Color(0xFFFFF6EF),
+      requiredTier: 3
+    ),
+    (
+      id: 'graphite',
+      name: 'Graphite',
+      isDark: false,
+      brand1: Color(0xFF1F2937),
+      brand2: Color(0xFF0B1220),
+      glow: Color(0xFF94A3B8),
+      bg: Color(0xFFF6F7F9),
+      requiredTier: 3
+    ),
+    (
+      id: 'lagoon',
+      name: 'Lagoon',
+      isDark: false,
+      brand1: Color(0xFF0D9488),
+      brand2: Color(0xFF155E75),
+      glow: Color(0xFF5EEAD4),
+      bg: Color(0xFFEFFCFB),
+      requiredTier: 3
+    ),
+    (
+      id: 'violet',
+      name: 'Violet',
+      isDark: false,
+      brand1: Color(0xFF7C3AED),
+      brand2: Color(0xFF5B21B6),
+      glow: Color(0xFFC084FC),
+      bg: Color(0xFFF8F6FF),
+      requiredTier: 3
+    ),
+    (
+      id: 'forest',
+      name: 'Forest',
+      isDark: true,
+      brand1: Color(0xFF16A34A),
+      brand2: Color(0xFF14532D),
+      glow: Color(0xFF4ADE80),
+      bg: Color(0xFF07110C),
+      requiredTier: 3
+    ),
+    (
+      id: 'aurora',
+      name: 'Aurora',
+      isDark: true,
+      brand1: Color(0xFFA855F7),
+      brand2: Color(0xFF4C1D95),
+      glow: Color(0xFFF0ABFC),
+      bg: Color(0xFF0D0817),
+      requiredTier: 3
+    ),
+    (
+      id: 'midnight',
+      name: 'Midnight',
+      isDark: true,
+      brand1: Color(0xFF0F766E),
+      brand2: Color(0xFF064E4B),
+      glow: Color(0xFF2BB5A8),
+      bg: Color(0xFF0A1314),
+      requiredTier: 3
+    ),
   ];
 
   Color? _parseHexColor(String hex) {
@@ -148,7 +278,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
-            content: Text('Pharmacy details and owner profile updated successfully!'),
+            content: Text(
+                'Pharmacy details and owner profile updated successfully!'),
             backgroundColor: AppColorsTokens.success,
           ),
         );
@@ -196,10 +327,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       color: AppColorsTokens.brand.withValues(alpha: 0.1),
                       borderRadius: BorderRadius.circular(AppRadiusTokens.tile),
                     ),
-                    child: const Icon(LucideIcons.keyRound, size: 20, color: AppColorsTokens.brand),
+                    child: const Icon(LucideIcons.keyRound,
+                        size: 20, color: AppColorsTokens.brand),
                   ),
                   const SizedBox(width: 12),
-                  const Text('Change Password', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                  const Text('Change Password',
+                      style:
+                          TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 ],
               ),
               content: ConstrainedBox(
@@ -214,7 +348,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         if (email != null) ...[
                           Text(
                             'Updating login password for $email',
-                            style: TextStyle(fontSize: 13, color: tokens.colors.muted),
+                            style: TextStyle(
+                                fontSize: 13, color: tokens.colors.muted),
                           ),
                           const SizedBox(height: 16),
                         ],
@@ -222,18 +357,25 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           Container(
                             padding: const EdgeInsets.all(10),
                             decoration: BoxDecoration(
-                              color: AppColorsTokens.danger.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(AppRadiusTokens.tile),
-                              border: Border.all(color: AppColorsTokens.danger.withValues(alpha: 0.3)),
+                              color:
+                                  AppColorsTokens.danger.withValues(alpha: 0.1),
+                              borderRadius:
+                                  BorderRadius.circular(AppRadiusTokens.tile),
+                              border: Border.all(
+                                  color: AppColorsTokens.danger
+                                      .withValues(alpha: 0.3)),
                             ),
                             child: Row(
                               children: [
-                                const Icon(LucideIcons.alertTriangle, size: 16, color: AppColorsTokens.danger),
+                                const Icon(LucideIcons.alertTriangle,
+                                    size: 16, color: AppColorsTokens.danger),
                                 const SizedBox(width: 8),
                                 Expanded(
                                   child: Text(
                                     dialogError!,
-                                    style: const TextStyle(fontSize: 12, color: AppColorsTokens.danger),
+                                    style: const TextStyle(
+                                        fontSize: 12,
+                                        color: AppColorsTokens.danger),
                                   ),
                                 ),
                               ],
@@ -242,7 +384,10 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           const SizedBox(height: 14),
                         ],
                         Text('Current Password *',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: tokens.colors.ink)),
+                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: tokens.colors.ink)),
                         const SizedBox(height: 6),
                         TextFormField(
                           controller: currentPasswordController,
@@ -251,15 +396,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             hintText: 'Enter current password',
                             prefixIcon: const Icon(LucideIcons.lock, size: 16),
                             suffixIcon: IconButton(
-                              icon: Icon(obscureCurrent ? LucideIcons.eyeOff : LucideIcons.eye, size: 16),
-                              onPressed: () => setDialogState(() => obscureCurrent = !obscureCurrent),
+                              icon: Icon(
+                                  obscureCurrent
+                                      ? LucideIcons.eyeOff
+                                      : LucideIcons.eye,
+                                  size: 16),
+                              onPressed: () => setDialogState(
+                                  () => obscureCurrent = !obscureCurrent),
                             ),
                           ),
-                          validator: (v) => v == null || v.isEmpty ? 'Required' : null,
+                          validator: (v) =>
+                              v == null || v.isEmpty ? 'Required' : null,
                         ),
                         const SizedBox(height: 14),
                         Text('New Password *',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: tokens.colors.ink)),
+                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: tokens.colors.ink)),
                         const SizedBox(height: 6),
                         TextFormField(
                           controller: newPasswordController,
@@ -268,34 +422,52 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             hintText: 'At least 6 characters',
                             prefixIcon: const Icon(LucideIcons.key, size: 16),
                             suffixIcon: IconButton(
-                              icon: Icon(obscureNew ? LucideIcons.eyeOff : LucideIcons.eye, size: 16),
-                              onPressed: () => setDialogState(() => obscureNew = !obscureNew),
+                              icon: Icon(
+                                  obscureNew
+                                      ? LucideIcons.eyeOff
+                                      : LucideIcons.eye,
+                                  size: 16),
+                              onPressed: () => setDialogState(
+                                  () => obscureNew = !obscureNew),
                             ),
                           ),
                           validator: (v) {
                             if (v == null || v.isEmpty) return 'Required';
-                            if (v.length < 6) return 'Must be at least 6 characters';
+                            if (v.length < 6) {
+                              return 'Must be at least 6 characters';
+                            }
                             return null;
                           },
                         ),
                         const SizedBox(height: 14),
                         Text('Confirm New Password *',
-                            style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600, color: tokens.colors.ink)),
+                            style: TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w600,
+                                color: tokens.colors.ink)),
                         const SizedBox(height: 6),
                         TextFormField(
                           controller: confirmPasswordController,
                           obscureText: obscureConfirm,
                           decoration: InputDecoration(
                             hintText: 'Re-enter new password',
-                            prefixIcon: const Icon(LucideIcons.checkCheck, size: 16),
+                            prefixIcon:
+                                const Icon(LucideIcons.checkCheck, size: 16),
                             suffixIcon: IconButton(
-                              icon: Icon(obscureConfirm ? LucideIcons.eyeOff : LucideIcons.eye, size: 16),
-                              onPressed: () => setDialogState(() => obscureConfirm = !obscureConfirm),
+                              icon: Icon(
+                                  obscureConfirm
+                                      ? LucideIcons.eyeOff
+                                      : LucideIcons.eye,
+                                  size: 16),
+                              onPressed: () => setDialogState(
+                                  () => obscureConfirm = !obscureConfirm),
                             ),
                           ),
                           validator: (v) {
                             if (v == null || v.isEmpty) return 'Required';
-                            if (v != newPasswordController.text) return 'Passwords do not match';
+                            if (v != newPasswordController.text) {
+                              return 'Passwords do not match';
+                            }
                             return null;
                           },
                         ),
@@ -306,7 +478,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               actions: [
                 TextButton(
-                  onPressed: isSubmitting ? null : () => Navigator.of(ctx).pop(),
+                  onPressed:
+                      isSubmitting ? null : () => Navigator.of(ctx).pop(),
                   child: const Text('Cancel'),
                 ),
                 AppButton(
@@ -322,8 +495,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           });
 
                           try {
-                            await ref.read(settingsActionControllerProvider.notifier).changePassword(
-                                  currentPassword: currentPasswordController.text,
+                            await ref
+                                .read(settingsActionControllerProvider.notifier)
+                                .changePassword(
+                                  currentPassword:
+                                      currentPasswordController.text,
                                   newPassword: newPasswordController.text,
                                 );
 
@@ -331,7 +507,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               Navigator.of(ctx).pop();
                               ScaffoldMessenger.of(context).showSnackBar(
                                 const SnackBar(
-                                  content: Text('Password updated successfully!'),
+                                  content:
+                                      Text('Password updated successfully!'),
                                   backgroundColor: AppColorsTokens.success,
                                 ),
                               );
@@ -339,7 +516,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           } catch (e) {
                             setDialogState(() {
                               isSubmitting = false;
-                              dialogError = e.toString().replaceAll('Exception: ', '');
+                              dialogError =
+                                  e.toString().replaceAll('Exception: ', '');
                             });
                           }
                         },
@@ -363,7 +541,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final customColor = ref.watch(customBrandColorProvider);
 
     if (!_isHexInitialized) {
-      _customHexController.text = '#${customColor.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
+      _customHexController.text =
+          '#${customColor.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
       _isHexInitialized = true;
     }
 
@@ -400,7 +579,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               // 1. Owner Profile & Account Card
               SectionCard(
                 title: 'Owner Account & Security',
-                subtitle: 'Manage your administrator account credentials and personal profile',
+                subtitle:
+                    'Manage your administrator account credentials and personal profile',
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -409,7 +589,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       padding: const EdgeInsets.all(14),
                       decoration: BoxDecoration(
                         color: tokens.colors.track,
-                        borderRadius: BorderRadius.circular(AppRadiusTokens.largeCard),
+                        borderRadius:
+                            BorderRadius.circular(AppRadiusTokens.largeCard),
                         border: Border.all(color: tokens.colors.line),
                       ),
                       child: LayoutBuilder(
@@ -421,10 +602,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               Container(
                                 padding: const EdgeInsets.all(8),
                                 decoration: BoxDecoration(
-                                  color: AppColorsTokens.brand.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(AppRadiusTokens.tile),
+                                  color: AppColorsTokens.brand
+                                      .withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(
+                                      AppRadiusTokens.tile),
                                 ),
-                                child: const Icon(LucideIcons.user, size: 18, color: AppColorsTokens.brand),
+                                child: const Icon(LucideIcons.user,
+                                    size: 18, color: AppColorsTokens.brand),
                               ),
                               const SizedBox(width: 12),
                               Expanded(
@@ -435,16 +619,22 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                       children: [
                                         Text(
                                           ownerEmail ?? 'Active Administrator',
-                                          style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14),
+                                          style: const TextStyle(
+                                              fontWeight: FontWeight.bold,
+                                              fontSize: 14),
                                         ),
                                         const SizedBox(width: 8),
-                                        const StatusBadge(label: 'Owner / Admin', variant: StatusBadgeVariant.info),
+                                        const StatusBadge(
+                                            label: 'Owner / Admin',
+                                            variant: StatusBadgeVariant.info),
                                       ],
                                     ),
                                     const SizedBox(height: 2),
                                     Text(
                                       'Official owner login credential for this pharmacy branch',
-                                      style: TextStyle(fontSize: 12, color: tokens.colors.muted),
+                                      style: TextStyle(
+                                          fontSize: 12,
+                                          color: tokens.colors.muted),
                                     ),
                                   ],
                                 ),
@@ -455,7 +645,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           final changePassBtn = AppButton.secondary(
                             text: 'Change Password',
                             icon: const Icon(LucideIcons.keyRound, size: 15),
-                            onPressed: () => _showChangePasswordDialog(context, ownerEmail),
+                            onPressed: () =>
+                                _showChangePasswordDialog(context, ownerEmail),
                           );
 
                           if (isNarrow) {
@@ -499,9 +690,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                               controller: _ownerNameController,
                               decoration: const InputDecoration(
                                 hintText: 'e.g. Dr. John Doe',
-                                prefixIcon: Icon(LucideIcons.userCheck, size: 16),
+                                prefixIcon:
+                                    Icon(LucideIcons.userCheck, size: 16),
                               ),
-                              validator: (v) => v == null || v.trim().isEmpty ? 'Required' : null,
+                              validator: (v) => v == null || v.trim().isEmpty
+                                  ? 'Required'
+                                  : null,
                             ),
                           ],
                         );
@@ -666,8 +860,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   const EdgeInsets.symmetric(horizontal: 14),
                               decoration: BoxDecoration(
                                 color: tokens.colors.card,
-                                borderRadius: BorderRadius.circular(
-                                    AppRadiusTokens.pill),
+                                borderRadius:
+                                    BorderRadius.circular(AppRadiusTokens.pill),
                                 border: Border.all(color: tokens.colors.line),
                               ),
                               child: DropdownButtonHideUnderline(
@@ -754,7 +948,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             TextButton(
                               onPressed: () => showPlanUpgradeDialog(context),
                               child: const Text('Upgrade Plan',
-                                  style: TextStyle(fontWeight: FontWeight.bold)),
+                                  style:
+                                      TextStyle(fontWeight: FontWeight.bold)),
                             ),
                           ],
                         ),
@@ -792,7 +987,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               // 4. Appearance & Themes Card
               SectionCard(
                 title: 'Appearance & Themes',
-                subtitle: 'Personalize your interface with color presets, dark mode, and custom branding',
+                subtitle:
+                    'Personalize your interface with color presets, dark mode, and custom branding',
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
@@ -834,10 +1030,12 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
 
                     // Plan Theme Quota Banner
                     Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 14, vertical: 10),
                       decoration: BoxDecoration(
                         color: tokens.colors.track,
-                        borderRadius: BorderRadius.circular(AppRadiusTokens.tile),
+                        borderRadius:
+                            BorderRadius.circular(AppRadiusTokens.tile),
                         border: Border.all(color: tokens.colors.line),
                       ),
                       child: Row(
@@ -845,7 +1043,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           Icon(
                             pharmacy.isEnterprisePlan
                                 ? LucideIcons.crown
-                                : (pharmacy.isProfessionalPlan ? LucideIcons.sparkles : LucideIcons.palette),
+                                : (pharmacy.isProfessionalPlan
+                                    ? LucideIcons.sparkles
+                                    : LucideIcons.palette),
                             size: 16,
                             color: tokens.colors.brand1,
                           ),
@@ -868,8 +1068,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                             TextButton(
                               onPressed: () => showPlanUpgradeDialog(context),
                               child: Text(
-                                pharmacy.isProfessionalPlan ? 'Upgrade to Enterprise' : 'Upgrade Plan',
-                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                                pharmacy.isProfessionalPlan
+                                    ? 'Upgrade to Enterprise'
+                                    : 'Upgrade Plan',
+                                style: const TextStyle(
+                                    fontSize: 12, fontWeight: FontWeight.bold),
                               ),
                             ),
                         ],
@@ -901,9 +1104,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                           children: _themePresets.map((t) {
                             final isLocked = pharmacy.isStandardPlan
                                 ? t.requiredTier > 1
-                                : (pharmacy.isProfessionalPlan ? t.requiredTier > 2 : false);
-                            final lockLabel = t.requiredTier == 2 ? 'Pro' : 'Enterprise';
-                            final isSelected = activePreset.toLowerCase() == t.id.toLowerCase();
+                                : (pharmacy.isProfessionalPlan
+                                    ? t.requiredTier > 2
+                                    : false);
+                            final lockLabel =
+                                t.requiredTier == 2 ? 'Pro' : 'Enterprise';
+                            final isSelected = activePreset.toLowerCase() ==
+                                t.id.toLowerCase();
 
                             return SizedBox(
                               width: cardWidth.clamp(140.0, 260.0),
@@ -927,7 +1134,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     const SizedBox(height: 24),
 
                     // Custom Brand Theme Section (Enterprise)
-                    _buildCustomBrandingSection(context, pharmacy, activePreset, customColor),
+                    _buildCustomBrandingSection(
+                        context, pharmacy, activePreset, customColor),
                   ],
                 ),
               ),
@@ -937,6 +1145,11 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               SectionCard(
                 title: 'Subscription & License',
                 subtitle: 'Your active tier and regulatory credentials',
+                trailing: TextButton.icon(
+                  onPressed: () => showPlanUpgradeDialog(context),
+                  icon: const Icon(LucideIcons.arrowUpCircle, size: 16),
+                  label: const Text('Change Plan'),
+                ),
                 child: LayoutBuilder(
                   builder: (context, constraints) {
                     final isNarrow = constraints.maxWidth < 600;
@@ -957,8 +1170,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                                   .copyWith(fontSize: 14)),
                           const SizedBox(height: 8),
                           Text('No: ${pharmacy.licenseNo ?? 'Not Specified'}',
-                              style: const TextStyle(
-                                  fontWeight: FontWeight.bold)),
+                              style:
+                                  const TextStyle(fontWeight: FontWeight.bold)),
                           const SizedBox(height: 4),
                           const StatusBadge(
                               label: 'Verified & Active',
@@ -1095,7 +1308,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
         if (isLocked) {
           showPlanUpgradeDialog(context);
         } else {
-          ref.read(themePresetProvider.notifier).setThemePreset(id);
+          applyThemePreset(ref, id);
         }
       },
       borderRadius: BorderRadius.circular(AppRadiusTokens.tile),
@@ -1108,7 +1321,9 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           border: Border.all(
             color: isSelected
                 ? tokens.colors.brand1
-                : (isLocked ? tokens.colors.line.withValues(alpha: 0.6) : tokens.colors.line),
+                : (isLocked
+                    ? tokens.colors.line.withValues(alpha: 0.6)
+                    : tokens.colors.line),
             width: isSelected ? 2 : 1,
           ),
           boxShadow: isSelected
@@ -1143,11 +1358,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       shape: BoxShape.circle,
                       color: AppColorsTokens.success,
                     ),
-                    child: const Icon(LucideIcons.check, size: 12, color: Colors.white),
+                    child: const Icon(LucideIcons.check,
+                        size: 12, color: Colors.white),
                   )
                 else if (isLocked)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
                     decoration: BoxDecoration(
                       color: tokens.colors.track,
                       borderRadius: BorderRadius.circular(AppRadiusTokens.pill),
@@ -1155,7 +1372,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(LucideIcons.lock, size: 10, color: tokens.colors.muted),
+                        Icon(LucideIcons.lock,
+                            size: 10, color: tokens.colors.muted),
                         const SizedBox(width: 3),
                         Text(
                           lockTier,
@@ -1178,7 +1396,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     name,
                     style: TextStyle(
                       fontSize: 13,
-                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                      fontWeight:
+                          isSelected ? FontWeight.bold : FontWeight.w600,
                       color: isLocked ? tokens.colors.muted : tokens.colors.ink,
                     ),
                     overflow: TextOverflow.ellipsis,
@@ -1186,7 +1405,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 ),
                 if (isDark)
                   Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                    padding:
+                        const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
                     decoration: BoxDecoration(
                       color: tokens.colors.track,
                       borderRadius: BorderRadius.circular(4),
@@ -1245,7 +1465,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 color: AppColorsTokens.amber.withValues(alpha: 0.15),
                 borderRadius: BorderRadius.circular(AppRadiusTokens.tile),
               ),
-              child: const Icon(LucideIcons.palette, size: 20, color: AppColorsTokens.amber),
+              child: const Icon(LucideIcons.palette,
+                  size: 20, color: AppColorsTokens.amber),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -1256,14 +1477,17 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     children: [
                       const Text(
                         'Custom Brand Theme & Color Derivation',
-                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                        style: TextStyle(
+                            fontSize: 13, fontWeight: FontWeight.bold),
                       ),
                       const SizedBox(width: 8),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 6, vertical: 2),
                         decoration: BoxDecoration(
                           color: const Color(0xFF7C3AED).withValues(alpha: 0.1),
-                          borderRadius: BorderRadius.circular(AppRadiusTokens.pill),
+                          borderRadius:
+                              BorderRadius.circular(AppRadiusTokens.pill),
                         ),
                         child: const Text(
                           'Enterprise',
@@ -1318,7 +1542,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   color: tokens.colors.brand1.withValues(alpha: 0.15),
                   borderRadius: BorderRadius.circular(AppRadiusTokens.tile),
                 ),
-                child: Icon(LucideIcons.palette, size: 18, color: tokens.colors.brand1),
+                child: Icon(LucideIcons.palette,
+                    size: 18, color: tokens.colors.brand1),
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1329,17 +1554,21 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                       children: [
                         const Text(
                           'Custom Brand Theme',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                          style: TextStyle(
+                              fontSize: 14, fontWeight: FontWeight.bold),
                         ),
                         const SizedBox(width: 8),
                         if (isCustomActive)
-                          const StatusBadge(label: 'Active Theme', variant: StatusBadgeVariant.success),
+                          const StatusBadge(
+                              label: 'Active Theme',
+                              variant: StatusBadgeVariant.success),
                       ],
                     ),
                     const SizedBox(height: 2),
                     Text(
                       'Pick a brand color swatch or enter a hex code to automatically generate your pharmacy theme',
-                      style: TextStyle(fontSize: 12, color: tokens.colors.muted),
+                      style:
+                          TextStyle(fontSize: 12, color: tokens.colors.muted),
                     ),
                   ],
                 ),
@@ -1351,19 +1580,28 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           // Quick Swatches
           Text(
             'Quick Brand Palette Swatches',
-            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: tokens.colors.ink),
+            style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w600,
+                color: tokens.colors.ink),
           ),
           const SizedBox(height: 8),
           Wrap(
             spacing: 8,
             runSpacing: 8,
             children: _brandSwatches.map((color) {
-              final isColorSelected = isCustomActive && customColor.toARGB32() == color.toARGB32();
+              final isColorSelected =
+                  isCustomActive && customColor.toARGB32() == color.toARGB32();
               return InkWell(
                 onTap: () {
-                  _customHexController.text = '#${color.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
-                  ref.read(customBrandColorProvider.notifier).setCustomBrandColor(color);
-                  ref.read(themePresetProvider.notifier).setThemePreset('custom');
+                  _customHexController.text =
+                      '#${color.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
+                  ref
+                      .read(customBrandColorProvider.notifier)
+                      .setCustomBrandColor(color);
+                  ref
+                      .read(themePresetProvider.notifier)
+                      .setThemePreset('custom');
                 },
                 borderRadius: BorderRadius.circular(20),
                 child: Container(
@@ -1387,7 +1625,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                         : null,
                   ),
                   child: isColorSelected
-                      ? const Icon(LucideIcons.check, size: 16, color: Colors.white)
+                      ? const Icon(LucideIcons.check,
+                          size: 16, color: Colors.white)
                       : null,
                 ),
               );
@@ -1405,7 +1644,8 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                   labelText: 'Custom Brand Hex Code',
                   hintText: '#0F766E',
                   prefixIcon: Icon(LucideIcons.hash, size: 16),
-                  contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                  contentPadding:
+                      EdgeInsets.symmetric(horizontal: 14, vertical: 10),
                 ),
               );
 
@@ -1415,18 +1655,24 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                 onPressed: () {
                   final parsed = _parseHexColor(_customHexController.text);
                   if (parsed != null) {
-                    ref.read(customBrandColorProvider.notifier).setCustomBrandColor(parsed);
-                    ref.read(themePresetProvider.notifier).setThemePreset('custom');
+                    ref
+                        .read(customBrandColorProvider.notifier)
+                        .setCustomBrandColor(parsed);
+                    ref
+                        .read(themePresetProvider.notifier)
+                        .setThemePreset('custom');
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Custom brand theme applied successfully!'),
+                        content:
+                            Text('Custom brand theme applied successfully!'),
                         backgroundColor: AppColorsTokens.success,
                       ),
                     );
                   } else {
                     ScaffoldMessenger.of(context).showSnackBar(
                       const SnackBar(
-                        content: Text('Please enter a valid 6-character hex color (e.g. #0F766E)'),
+                        content: Text(
+                            'Please enter a valid 6-character hex color (e.g. #0F766E)'),
                         backgroundColor: AppColorsTokens.danger,
                       ),
                     );

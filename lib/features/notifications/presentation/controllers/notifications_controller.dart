@@ -8,6 +8,14 @@ final notificationsStreamProvider =
   final profile = ref.watch(currentProfileProvider).value;
   final repo = ref.watch(notificationsRepositoryProvider);
 
+  // Automatically trigger automated alert checking for low stock & expiry (<=10d)
+  if (profile?.pharmacyId != null && profile!.pharmacyId!.isNotEmpty) {
+    repo.checkAndGenerateInventoryAlerts(
+      pharmacyId: profile.pharmacyId!,
+      ownerUserId: profile.id,
+    );
+  }
+
   return repo.streamNotifications(
     pharmacyId: profile?.pharmacyId,
     userId: profile?.id,

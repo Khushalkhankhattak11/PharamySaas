@@ -9,21 +9,27 @@ import '../../../shared/models/dashboard_summary_model.dart';
 import '../../../shared/models/sale_model.dart';
 import '../../../shared/widgets/donut_chart_card.dart';
 import '../../../shared/widgets/pill_bar_chart.dart';
+import '../../notifications/data/notifications_repository.dart';
 
 final dashboardRepositoryProvider = Provider<DashboardRepository>((ref) {
   final firestore = ref.watch(firestoreProvider);
-  return DashboardRepository(firestore);
+  final notificationsRepo = ref.watch(notificationsRepositoryProvider);
+  return DashboardRepository(firestore, notificationsRepo);
 });
 
 class DashboardRepository {
   final FirebaseFirestore _firestore;
+  final NotificationsRepository? _notificationsRepo;
 
-  DashboardRepository(this._firestore);
+  DashboardRepository(this._firestore, [this._notificationsRepo]);
 
   Future<DashboardSummaryModel> getSummary(String pharmacyId) async {
     final now = DateTime.now();
     final todayStart = DateTime(now.year, now.month, now.day);
-    final ninetyDaysAhead = now.add(const Duration(days: 90));
+    final tenDaysAhead = now.add(const Duration(days: 10));
+
+    // Automatically check and generate real-time inventory & batch expiry alerts
+    _notificationsRepo?.checkAndGenerateInventoryAlerts(pharmacyId: pharmacyId);
 
     // 1. Fetch sales for today and recent sales
     final salesSnapshot = await _firestore
@@ -167,7 +173,7 @@ class DashboardRepository {
         if (expDate != null) {
           if (expDate.isBefore(now)) {
             expiredCount++;
-          } else if (expDate.isBefore(ninetyDaysAhead)) {
+          } else if (expDate.isBefore(tenDaysAhead)) {
             expiringSoonCount++;
           }
         }

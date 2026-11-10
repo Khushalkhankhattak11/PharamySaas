@@ -42,7 +42,7 @@ class AreaChartCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    const tealColor = AppColorsTokens.brandGradientStart; // #0F766E
+    final chartAccent = tokens.colors.accent;
 
     return SectionCard(
       title: title,
@@ -167,15 +167,15 @@ class AreaChartCard extends StatelessWidget {
                 lineTouchData: LineTouchData(
                   enabled: true,
                   touchTooltipData: LineTouchTooltipData(
-                    getTooltipColor: (_) => AppColorsTokens.tooltipDark,
+                    getTooltipColor: (_) => tokens.colors.tooltipBg,
                     tooltipRoundedRadius: 10,
                     tooltipPadding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
                     getTooltipItems: (touchedSpots) {
                       return touchedSpots.map((spot) {
                         return LineTooltipItem(
                           'Rs ${spot.y.toInt()}k',
-                          const TextStyle(
-                            color: Colors.white,
+                          TextStyle(
+                            color: tokens.colors.tooltipText,
                             fontSize: 12,
                             fontWeight: FontWeight.w700,
                             fontFeatures: AppTypographyTokens.tabularFigures,
@@ -190,7 +190,7 @@ class AreaChartCard extends StatelessWidget {
                     spots: spots,
                     isCurved: true,
                     curveSmoothness: 0.35,
-                    color: tealColor,
+                    color: chartAccent,
                     barWidth: 3.5,
                     isStrokeCapRound: true,
                     dotData: FlDotData(
@@ -201,9 +201,9 @@ class AreaChartCard extends StatelessWidget {
                       getDotPainter: (spot, percent, barData, index) {
                         return FlDotCirclePainter(
                           radius: 7,
-                          color: Colors.white,
+                          color: tokens.colors.card,
                           strokeWidth: 3.5,
-                          strokeColor: tealColor,
+                          strokeColor: chartAccent,
                         );
                       },
                     ),
@@ -213,8 +213,8 @@ class AreaChartCard extends StatelessWidget {
                         begin: Alignment.topCenter,
                         end: Alignment.bottomCenter,
                         colors: [
-                          tealColor.withValues(alpha: 0.35),
-                          tealColor.withValues(alpha: 0.0),
+                          chartAccent.withValues(alpha: 0.38),
+                          chartAccent.withValues(alpha: 0.0),
                         ],
                       ),
                     ),
