@@ -8,6 +8,7 @@ import '../../features/auth/presentation/controllers/auth_controller.dart';
 import 'app_search_field.dart';
 import 'avatar_menu.dart';
 import 'notification_bell.dart';
+import 'safe_sign_out_dialog.dart';
 import 'theme_picker_dialog.dart';
 
 class AppTopBar extends ConsumerWidget {
@@ -135,7 +136,9 @@ class AppTopBar extends ConsumerWidget {
                         ref.read(themeModeProvider.notifier).toggleTheme();
                       },
                       child: Icon(
-                        themeMode == ThemeMode.dark ? LucideIcons.sun : LucideIcons.moon,
+                        themeMode == ThemeMode.dark
+                            ? LucideIcons.sun
+                            : LucideIcons.moon,
                         size: 18,
                         color: tokens.colors.ink,
                       ),
@@ -243,7 +246,9 @@ class AppTopBar extends ConsumerWidget {
                   ref.read(themeModeProvider.notifier).toggleTheme();
                 },
                 child: Icon(
-                  themeMode == ThemeMode.dark ? LucideIcons.sun : LucideIcons.moon,
+                  themeMode == ThemeMode.dark
+                      ? LucideIcons.sun
+                      : LucideIcons.moon,
                   size: 18,
                   color: tokens.colors.ink,
                 ),
@@ -318,30 +323,6 @@ class AppTopBar extends ConsumerWidget {
   }
 
   void _confirmSignOut(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadiusTokens.largeCard)),
-        title: const Text('Sign Out'),
-        content: const Text('Are you sure you want to sign out of Super Admin?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColorsTokens.danger),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await ref.read(authControllerProvider.notifier).signOut();
-              if (context.mounted) {
-                context.go('/login');
-              }
-            },
-            child: const Text('Sign Out', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
+    showSafeSignOutDialog(context, ref);
   }
 }

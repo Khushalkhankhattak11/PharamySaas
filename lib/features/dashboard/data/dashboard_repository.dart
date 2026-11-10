@@ -3,6 +3,7 @@ import 'package:fl_chart/fl_chart.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/firebase/firebase_providers.dart';
+import '../../../core/firebase/firestore_cache_helper.dart';
 import '../../../core/firebase/firestore_collections.dart';
 import '../../../core/theme/tokens.dart';
 import '../../../shared/models/dashboard_summary_model.dart';
@@ -31,12 +32,61 @@ class DashboardRepository {
     // Automatically check and generate real-time inventory & batch expiry alerts
     _notificationsRepo?.checkAndGenerateInventoryAlerts(pharmacyId: pharmacyId);
 
-    // 1. Fetch sales for today and recent sales
-    final salesSnapshot = await _firestore
+    // 1. Parallel cache-first queries for instantaneous response
+    final pharmacyDoc = _firestore.collection(FirestoreCollections.pharmacies).doc(pharmacyId);
+
+    final salesQueryFuture = _firestore
         .collection(FirestoreCollections.sales)
         .where('pharmacy_id', isEqualTo: pharmacyId)
-        .get();
+        .getFast();
 
+    final purchasesQueryFuture = _firestore
+        .collection(FirestoreCollections.purchases)
+        .where('pharmacy_id', isEqualTo: pharmacyId)
+        .getFast();
+
+    final productsQueryFuture = pharmacyDoc
+        .collection(FirestoreCollections.products)
+        .where('is_active', isEqualTo: true)
+        .getFast()
+        .catchError((_) => _firestore.collection('empty_fallback').getFast());
+
+    final stocksQueryFuture = pharmacyDoc
+        .collection(FirestoreCollections.stocks)
+        .where('is_active', isEqualTo: true)
+        .getFast()
+        .catchError((_) => _firestore.collection('empty_fallback').getFast());
+
+    final medicinesQueryFuture = _firestore
+        .collection(FirestoreCollections.medicines)
+        .where('pharmacy_id', isEqualTo: pharmacyId)
+        .where('is_active', isEqualTo: true)
+        .getFast()
+        .catchError((_) => _firestore.collection('empty_fallback').getFast());
+
+    final batchesQueryFuture = _firestore
+        .collection(FirestoreCollections.batches)
+        .where('pharmacy_id', isEqualTo: pharmacyId)
+        .getFast();
+
+    // Await all 6 queries concurrently
+    final queryResults = await Future.wait([
+      salesQueryFuture,
+      purchasesQueryFuture,
+      productsQueryFuture,
+      stocksQueryFuture,
+      medicinesQueryFuture,
+      batchesQueryFuture,
+    ]);
+
+    final salesSnapshot = queryResults[0];
+    final purchasesSnapshot = queryResults[1];
+    final prodSnapshot = queryResults[2];
+    final stockSnapshot = queryResults[3];
+    final medSnapshot = queryResults[4];
+    final batchSnapshot = queryResults[5];
+
+    // Process sales
     final allSales = salesSnapshot.docs.map((d) {
       final data = Map<String, dynamic>.from(d.data());
       data['id'] = d.id;
@@ -54,12 +104,7 @@ class DashboardRepository {
     final todayInvoices = todaySalesList.length;
     final recentSales = allSales.take(10).toList();
 
-    // 2. Fetch purchases to compute real procurement figures
-    final purchasesSnapshot = await _firestore
-        .collection(FirestoreCollections.purchases)
-        .where('pharmacy_id', isEqualTo: pharmacyId)
-        .get();
-
+    // Process purchases
     double totalPurchases = 0.0;
     for (final doc in purchasesSnapshot.docs) {
       final amt = (doc.data()['total_amount'] as num?)?.toDouble() ?? 0.0;
@@ -72,44 +117,21 @@ class DashboardRepository {
         (totalSalesRevenue - totalPurchases).clamp(0.0, double.infinity);
     final totalInvoicesCount = allSales.length;
 
-    // 3. Fetch medicines & inventory breakdown (merge pharmacy stocks subcollection + root medicines)
+    // Process medicines & inventory breakdown
     final Map<String, Map<String, dynamic>> allMedsMap = {};
-    final pharmacyDoc = _firestore.collection(FirestoreCollections.pharmacies).doc(pharmacyId);
-
-    try {
-      final prodSnapshot = await pharmacyDoc
-          .collection(FirestoreCollections.products)
-          .where('is_active', isEqualTo: true)
-          .get();
-      for (final doc in prodSnapshot.docs) {
+    for (final doc in prodSnapshot.docs) {
+      allMedsMap[doc.id] = doc.data();
+    }
+    for (final doc in stockSnapshot.docs) {
+      if (!allMedsMap.containsKey(doc.id)) {
         allMedsMap[doc.id] = doc.data();
       }
-    } catch (_) {}
-
-    try {
-      final stockSnapshot = await pharmacyDoc
-          .collection(FirestoreCollections.stocks)
-          .where('is_active', isEqualTo: true)
-          .get();
-      for (final doc in stockSnapshot.docs) {
-        if (!allMedsMap.containsKey(doc.id)) {
-          allMedsMap[doc.id] = doc.data();
-        }
+    }
+    for (final doc in medSnapshot.docs) {
+      if (!allMedsMap.containsKey(doc.id)) {
+        allMedsMap[doc.id] = doc.data();
       }
-    } catch (_) {}
-
-    try {
-      final medSnapshot = await _firestore
-          .collection(FirestoreCollections.medicines)
-          .where('pharmacy_id', isEqualTo: pharmacyId)
-          .where('is_active', isEqualTo: true)
-          .get();
-      for (final doc in medSnapshot.docs) {
-        if (!allMedsMap.containsKey(doc.id)) {
-          allMedsMap[doc.id] = doc.data();
-        }
-      }
-    } catch (_) {}
+    }
 
     final totalMedicines = allMedsMap.length;
     int totalUnitsInStock = 0;
@@ -157,12 +179,7 @@ class DashboardRepository {
       categoryShares.sort((a, b) => b.percentage.compareTo(a.percentage));
     }
 
-    // 4. Fetch expiring soon and expired batches
-    final batchSnapshot = await _firestore
-        .collection(FirestoreCollections.batches)
-        .where('pharmacy_id', isEqualTo: pharmacyId)
-        .get();
-
+    // Process expiring soon and expired batches
     int expiringSoonCount = 0;
     int expiredCount = 0;
     for (final doc in batchSnapshot.docs) {

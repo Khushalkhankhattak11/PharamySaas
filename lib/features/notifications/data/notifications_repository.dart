@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/firebase/firebase_providers.dart';
+import '../../../core/firebase/firestore_cache_helper.dart';
 import '../../../core/firebase/firestore_collections.dart';
 import '../../../shared/models/notification_model.dart';
 import '../../auth/data/auth_repository.dart';
@@ -40,7 +41,7 @@ class NotificationsRepository {
     }
 
     try {
-      final snapshot = await query.get();
+      final snapshot = await query.getFast();
       final list = snapshot.docs.map((d) {
         final data = Map<String, dynamic>.from(d.data());
         data['id'] = d.id;

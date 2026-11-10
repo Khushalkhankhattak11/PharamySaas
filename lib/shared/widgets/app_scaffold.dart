@@ -7,6 +7,7 @@ import '../../../shared/models/user_role.dart';
 import '../../features/auth/presentation/controllers/auth_controller.dart';
 import 'app_sidebar.dart';
 import 'app_top_bar.dart';
+import 'safe_sign_out_dialog.dart';
 
 class AppScaffold extends ConsumerWidget {
   final Widget child;
@@ -373,31 +374,7 @@ class AppScaffold extends ConsumerWidget {
   }
 
   void _confirmSignOut(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadiusTokens.largeCard)),
-        title: const Text('Sign Out'),
-        content: const Text('Are you sure you want to sign out of your account?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColorsTokens.danger),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await ref.read(authControllerProvider.notifier).signOut();
-              if (context.mounted) {
-                context.go('/login');
-              }
-            },
-            child: const Text('Sign Out', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
+    showSafeSignOutDialog(context, ref);
   }
 
   String _getTitleFromRoute(String location) {

@@ -3,8 +3,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../core/theme/tokens.dart';
-import '../../features/auth/presentation/controllers/auth_controller.dart';
 import '../../shared/models/user_role.dart';
+import 'safe_sign_out_dialog.dart';
 import 'theme_picker_dialog.dart';
 
 class NavItemData {
@@ -38,53 +38,181 @@ class AppSidebar extends ConsumerWidget {
   List<NavItemData> _getNavItems() {
     if (role.isSuperAdmin) {
       return const [
-        NavItemData(title: 'Dashboard', icon: LucideIcons.layoutDashboard, route: '/super-admin', group: 'Platform'),
-        NavItemData(title: 'Pending approvals', icon: LucideIcons.checkSquare, route: '/super-admin/approvals', group: 'Platform'),
-        NavItemData(title: 'All pharmacies', icon: LucideIcons.building, route: '/super-admin/pharmacies', group: 'Platform'),
-        NavItemData(title: 'Notifications', icon: LucideIcons.bell, route: '/notifications', group: 'System'),
-        NavItemData(title: 'Theme', icon: LucideIcons.palette, route: 'action:theme', group: 'System'),
-        NavItemData(title: 'Settings', icon: LucideIcons.settings, route: '/settings', group: 'System'),
+        NavItemData(
+            title: 'Dashboard',
+            icon: LucideIcons.layoutDashboard,
+            route: '/super-admin',
+            group: 'Platform'),
+        NavItemData(
+            title: 'Pending approvals',
+            icon: LucideIcons.checkSquare,
+            route: '/super-admin/approvals',
+            group: 'Platform'),
+        NavItemData(
+            title: 'All pharmacies',
+            icon: LucideIcons.building,
+            route: '/super-admin/pharmacies',
+            group: 'Platform'),
+        NavItemData(
+            title: 'Notifications',
+            icon: LucideIcons.bell,
+            route: '/notifications',
+            group: 'System'),
+        NavItemData(
+            title: 'Theme',
+            icon: LucideIcons.palette,
+            route: 'action:theme',
+            group: 'System'),
+        NavItemData(
+            title: 'Settings',
+            icon: LucideIcons.settings,
+            route: '/settings',
+            group: 'System'),
       ];
     }
 
     if (role.isStorekeeper) {
       return const [
-        NavItemData(title: 'Inventory', icon: LucideIcons.package, route: '/inventory', group: 'Inventory'),
-        NavItemData(title: 'Purchases', icon: LucideIcons.shoppingCart, route: '/purchases', group: 'Inventory'),
-        NavItemData(title: 'Suppliers', icon: LucideIcons.truck, route: '/suppliers', group: 'Inventory'),
-        NavItemData(title: 'QR labels', icon: LucideIcons.qrCode, route: '/qr-setup', group: 'Inventory'),
-        NavItemData(title: 'Reports', icon: LucideIcons.barChart2, route: '/reports', group: 'Inventory'),
-        NavItemData(title: 'Notifications', icon: LucideIcons.bell, route: '/notifications', group: 'System'),
-        NavItemData(title: 'Theme', icon: LucideIcons.palette, route: 'action:theme', group: 'System'),
-        NavItemData(title: 'Settings', icon: LucideIcons.settings, route: '/settings', group: 'System'),
+        NavItemData(
+            title: 'Inventory',
+            icon: LucideIcons.package,
+            route: '/inventory',
+            group: 'Inventory'),
+        NavItemData(
+            title: 'Purchases',
+            icon: LucideIcons.shoppingCart,
+            route: '/purchases',
+            group: 'Inventory'),
+        NavItemData(
+            title: 'Suppliers',
+            icon: LucideIcons.truck,
+            route: '/suppliers',
+            group: 'Inventory'),
+        NavItemData(
+            title: 'QR labels',
+            icon: LucideIcons.qrCode,
+            route: '/qr-setup',
+            group: 'Inventory'),
+        NavItemData(
+            title: 'Reports',
+            icon: LucideIcons.barChart2,
+            route: '/reports',
+            group: 'Inventory'),
+        NavItemData(
+            title: 'Notifications',
+            icon: LucideIcons.bell,
+            route: '/notifications',
+            group: 'System'),
+        NavItemData(
+            title: 'Theme',
+            icon: LucideIcons.palette,
+            route: 'action:theme',
+            group: 'System'),
+        NavItemData(
+            title: 'Settings',
+            icon: LucideIcons.settings,
+            route: '/settings',
+            group: 'System'),
       ];
     }
 
     if (role.isCashier) {
       return const [
-        NavItemData(title: 'Point of sale', icon: LucideIcons.calculator, route: '/pos', group: 'Main menu'),
-        NavItemData(title: 'Sales history', icon: LucideIcons.receipt, route: '/sales-history', group: 'Main menu'),
-        NavItemData(title: 'Medicines', icon: LucideIcons.package, route: '/inventory', group: 'Inventory'),
-        NavItemData(title: 'Medicine lookup', icon: LucideIcons.search, route: '/medicine-lookup', group: 'Inventory'),
-        NavItemData(title: 'Notifications', icon: LucideIcons.bell, route: '/notifications', group: 'System'),
-        NavItemData(title: 'Theme', icon: LucideIcons.palette, route: 'action:theme', group: 'System'),
-        NavItemData(title: 'Settings', icon: LucideIcons.settings, route: '/settings', group: 'System'),
+        NavItemData(
+            title: 'Point of sale',
+            icon: LucideIcons.calculator,
+            route: '/pos',
+            group: 'Main menu'),
+        NavItemData(
+            title: 'Sales history',
+            icon: LucideIcons.receipt,
+            route: '/sales-history',
+            group: 'Main menu'),
+        NavItemData(
+            title: 'Medicines',
+            icon: LucideIcons.package,
+            route: '/inventory',
+            group: 'Inventory'),
+        NavItemData(
+            title: 'Medicine lookup',
+            icon: LucideIcons.search,
+            route: '/medicine-lookup',
+            group: 'Inventory'),
+        NavItemData(
+            title: 'Notifications',
+            icon: LucideIcons.bell,
+            route: '/notifications',
+            group: 'System'),
+        NavItemData(
+            title: 'Theme',
+            icon: LucideIcons.palette,
+            route: 'action:theme',
+            group: 'System'),
+        NavItemData(
+            title: 'Settings',
+            icon: LucideIcons.settings,
+            route: '/settings',
+            group: 'System'),
       ];
     }
 
     // Admin (Pharmacy Owner)
     return const [
-      NavItemData(title: 'Dashboard', icon: LucideIcons.layoutDashboard, route: '/dashboard', group: 'Main menu'),
-      NavItemData(title: 'Point of sale', icon: LucideIcons.calculator, route: '/pos', group: 'Main menu'),
-      NavItemData(title: 'Sales history', icon: LucideIcons.receipt, route: '/sales-history', group: 'Main menu'),
-      NavItemData(title: 'Medicines', icon: LucideIcons.package, route: '/inventory', group: 'Inventory'),
-      NavItemData(title: 'QR labels', icon: LucideIcons.qrCode, route: '/qr-setup', group: 'Inventory'),
-      NavItemData(title: 'Purchases', icon: LucideIcons.shoppingCart, route: '/purchases', group: 'Inventory'),
-      NavItemData(title: 'Suppliers', icon: LucideIcons.truck, route: '/suppliers', group: 'Inventory'),
-      NavItemData(title: 'Reports', icon: LucideIcons.barChart2, route: '/reports', group: 'Admin'),
-      NavItemData(title: 'Staff', icon: LucideIcons.users, route: '/staff', group: 'Admin'),
-      NavItemData(title: 'Theme', icon: LucideIcons.palette, route: 'action:theme', group: 'Admin'),
-      NavItemData(title: 'Settings', icon: LucideIcons.settings, route: '/settings', group: 'Admin'),
+      NavItemData(
+          title: 'Dashboard',
+          icon: LucideIcons.layoutDashboard,
+          route: '/dashboard',
+          group: 'Main menu'),
+      NavItemData(
+          title: 'Point of sale',
+          icon: LucideIcons.calculator,
+          route: '/pos',
+          group: 'Main menu'),
+      NavItemData(
+          title: 'Sales history',
+          icon: LucideIcons.receipt,
+          route: '/sales-history',
+          group: 'Main menu'),
+      NavItemData(
+          title: 'Medicines',
+          icon: LucideIcons.package,
+          route: '/inventory',
+          group: 'Inventory'),
+      NavItemData(
+          title: 'QR labels',
+          icon: LucideIcons.qrCode,
+          route: '/qr-setup',
+          group: 'Inventory'),
+      NavItemData(
+          title: 'Purchases',
+          icon: LucideIcons.shoppingCart,
+          route: '/purchases',
+          group: 'Inventory'),
+      NavItemData(
+          title: 'Suppliers',
+          icon: LucideIcons.truck,
+          route: '/suppliers',
+          group: 'Inventory'),
+      NavItemData(
+          title: 'Reports',
+          icon: LucideIcons.barChart2,
+          route: '/reports',
+          group: 'Admin'),
+      NavItemData(
+          title: 'Staff',
+          icon: LucideIcons.users,
+          route: '/staff',
+          group: 'Admin'),
+      NavItemData(
+          title: 'Theme',
+          icon: LucideIcons.palette,
+          route: 'action:theme',
+          group: 'Admin'),
+      NavItemData(
+          title: 'Settings',
+          icon: LucideIcons.settings,
+          route: '/settings',
+          group: 'Admin'),
     ];
   }
 
@@ -105,7 +233,6 @@ class AppSidebar extends ConsumerWidget {
         crossAxisAlignment:
             isCollapsed ? CrossAxisAlignment.center : CrossAxisAlignment.start,
         children: [
-          // Logo row (padding 0 8 18): 42x42 mark, radius 14, gradient 135deg brand1 -> brand2, white bold "+" 22px, shadow 0 8 18 brand1 at 40%. Right of it "PharmaCore" 17/800 and "Smart pharmacy management" 12 muted.
           Padding(
             padding: EdgeInsets.only(bottom: 18, left: isCollapsed ? 0 : 8),
             child: Row(
@@ -120,7 +247,8 @@ class AppSidebar extends ConsumerWidget {
                       end: Alignment.bottomRight,
                       colors: [tokens.colors.brand1, tokens.colors.brand2],
                     ),
-                    borderRadius: BorderRadius.circular(AppRadiusTokens.logoMark),
+                    borderRadius:
+                        BorderRadius.circular(AppRadiusTokens.logoMark),
                     boxShadow: [
                       BoxShadow(
                         color: tokens.colors.brand1.withValues(alpha: 0.40),
@@ -157,7 +285,9 @@ class AppSidebar extends ConsumerWidget {
                           ),
                         ),
                         Text(
-                          role.isSuperAdmin ? 'Super Admin Portal' : 'Smart pharmacy management',
+                          role.isSuperAdmin
+                              ? 'Super Admin Portal'
+                              : 'Smart pharmacy management',
                           style: TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.w500,
@@ -189,7 +319,8 @@ class AppSidebar extends ConsumerWidget {
     );
   }
 
-  Widget _buildLogoutButton(BuildContext context, WidgetRef ref, AppTokens tokens) {
+  Widget _buildLogoutButton(
+      BuildContext context, WidgetRef ref, AppTokens tokens) {
     if (isCollapsed) {
       return Tooltip(
         message: 'Sign Out',
@@ -262,34 +393,11 @@ class AppSidebar extends ConsumerWidget {
   }
 
   void _confirmSignOut(BuildContext context, WidgetRef ref) {
-    showDialog(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadiusTokens.largeCard)),
-        title: const Text('Sign Out'),
-        content: Text('Are you sure you want to sign out${role.isSuperAdmin ? ' from Super Admin' : ''}?'),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            style: ElevatedButton.styleFrom(backgroundColor: AppColorsTokens.danger),
-            onPressed: () async {
-              Navigator.pop(ctx);
-              await ref.read(authControllerProvider.notifier).signOut();
-              if (context.mounted) {
-                context.go('/login');
-              }
-            },
-            child: const Text('Sign Out', style: TextStyle(color: Colors.white)),
-          ),
-        ],
-      ),
-    );
+    showSafeSignOutDialog(context, ref);
   }
 
-  List<Widget> _buildNavGroupWidgets(BuildContext context, List<NavItemData> items) {
+  List<Widget> _buildNavGroupWidgets(
+      BuildContext context, List<NavItemData> items) {
     final tokens = context.tokens;
     final List<Widget> widgets = [];
     String? currentGroup;
@@ -443,7 +551,8 @@ class _NavTileState extends State<_NavTile> {
                     widget.item.title,
                     style: TextStyle(
                       fontSize: 14,
-                      fontWeight: widget.isActive ? FontWeight.w700 : FontWeight.w500,
+                      fontWeight:
+                          widget.isActive ? FontWeight.w700 : FontWeight.w500,
                       color: widget.isActive ? Colors.white : tokens.colors.ink,
                     ),
                     maxLines: 1,

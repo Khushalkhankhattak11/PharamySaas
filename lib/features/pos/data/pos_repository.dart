@@ -3,6 +3,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/firebase/firebase_providers.dart';
+import '../../../core/firebase/firestore_cache_helper.dart';
 import '../../../core/firebase/firestore_collections.dart';
 import '../../../shared/models/batch_model.dart';
 import '../../../shared/models/cart_item_model.dart';
@@ -66,7 +67,7 @@ class PosRepository {
         final subBatchesSnap = await pharmacyDoc
             .collection(FirestoreCollections.batches)
             .where('medicine_id', isEqualTo: cartItem.medicineId)
-            .get();
+            .getFast();
         for (final d in subBatchesSnap.docs) {
           final data = Map<String, dynamic>.from(d.data());
           data['id'] = d.id;
@@ -80,7 +81,7 @@ class PosRepository {
               .collection(FirestoreCollections.batches)
               .where('pharmacy_id', isEqualTo: pharmacyId)
               .where('medicine_id', isEqualTo: cartItem.medicineId)
-              .get();
+              .getFast();
           for (final d in rootBatchesSnap.docs) {
             final data = Map<String, dynamic>.from(d.data());
             data['id'] = d.id;
@@ -394,7 +395,7 @@ class PosRepository {
         .where('pharmacy_id', isEqualTo: pharmacyId)
         .where('qr_code', isEqualTo: trimmed)
         .limit(1)
-        .get();
+        .getFast();
 
     if (qrSnapshot.docs.isNotEmpty) {
       final d = qrSnapshot.docs.first;
@@ -418,7 +419,7 @@ class PosRepository {
         .where('pharmacy_id', isEqualTo: pharmacyId)
         .where('qr_code', isEqualTo: trimmed)
         .limit(1)
-        .get();
+        .getFast();
 
     if (batchSnapshot.docs.isNotEmpty) {
       final bData = Map<String, dynamic>.from(batchSnapshot.docs.first.data());
@@ -428,7 +429,7 @@ class PosRepository {
         final mDoc = await _firestore
             .collection(FirestoreCollections.medicines)
             .doc(medId)
-            .get();
+            .getFast();
         if (mDoc.exists && mDoc.data() != null) {
           final mData = Map<String, dynamic>.from(mDoc.data()!);
           mData['id'] = mDoc.id;

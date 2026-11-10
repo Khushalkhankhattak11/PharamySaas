@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/firebase/firebase_providers.dart';
 import '../../../../core/theme/theme_controller.dart';
@@ -10,6 +9,7 @@ import '../../../../shared/models/profile_model.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/plan_card.dart';
 import '../../../../shared/widgets/plan_upgrade_dialog.dart';
+import '../../../../shared/widgets/safe_sign_out_dialog.dart';
 import '../../../../shared/widgets/section_card.dart';
 import '../../../../shared/widgets/status_badge.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
@@ -1211,10 +1211,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
                     text: 'Sign Out Account',
                     icon: const Icon(LucideIcons.logOut,
                         size: 16, color: Colors.white),
-                    onPressed: () async {
-                      await ref.read(authControllerProvider.notifier).signOut();
-                      if (context.mounted) context.go('/login');
-                    },
+                    onPressed: () => showSafeSignOutDialog(context, ref),
                   ),
                   AppButton(
                     text: 'Save All Changes',

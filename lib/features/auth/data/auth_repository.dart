@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart' as fb;
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/firebase/firebase_providers.dart';
+import '../../../core/firebase/firestore_cache_helper.dart';
 import '../../../core/firebase/firestore_collections.dart';
 import '../../../shared/models/pharmacy_model.dart';
 import '../../../shared/models/profile_model.dart';
@@ -171,7 +172,7 @@ class AuthRepository {
     try {
       // 1. Check if user is Super Admin in the dedicated 'admin' collection
       try {
-        final adminDoc = await _firestore.collection(FirestoreCollections.admin).doc(userId).get();
+        final adminDoc = await _firestore.collection(FirestoreCollections.admin).doc(userId).getFast();
         if (adminDoc.exists && adminDoc.data() != null) {
           final data = Map<String, dynamic>.from(adminDoc.data()!);
           data['id'] = adminDoc.id;
@@ -181,7 +182,7 @@ class AuthRepository {
       } catch (_) {}
 
       // 2. Fetch from standard profiles collection
-      final doc = await _firestore.collection(FirestoreCollections.profiles).doc(userId).get();
+      final doc = await _firestore.collection(FirestoreCollections.profiles).doc(userId).getFast();
       if (doc.exists && doc.data() != null) {
         final data = Map<String, dynamic>.from(doc.data()!);
         data['id'] = doc.id;
@@ -339,7 +340,7 @@ class AuthRepository {
       final doc = await _firestore
           .collection(FirestoreCollections.pharmacies)
           .doc(pharmacyId)
-          .get();
+          .getFast();
       if (!doc.exists || doc.data() == null) return null;
       final data = Map<String, dynamic>.from(doc.data()!);
       data['id'] = doc.id;

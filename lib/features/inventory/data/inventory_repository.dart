@@ -3,6 +3,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../core/firebase/firebase_providers.dart';
+import '../../../core/firebase/firestore_cache_helper.dart';
 import '../../../core/firebase/firestore_collections.dart';
 import '../../../shared/models/batch_model.dart';
 import '../../../shared/models/medicine_model.dart';
@@ -354,160 +355,44 @@ class InventoryRepository {
       }
     }
 
-    // 1. Fetch from pharmacy products subcollection: pharmacies/{pharmacyId}/products
-    try {
-      Query<Map<String, dynamic>> prodSub = pharmacyDoc.collection(FirestoreCollections.products);
+    // Parallel cache-first queries across potential collections
+    Query<Map<String, dynamic>> applyFilter(Query<Map<String, dynamic>> q) {
       if (filter == 'inactive') {
-        prodSub = prodSub.where('is_active', isEqualTo: false);
+        return q.where('is_active', isEqualTo: false);
       } else if (filter != 'all') {
-        prodSub = prodSub.where('is_active', isEqualTo: true);
+        return q.where('is_active', isEqualTo: true);
       }
-      final prodSnap = await prodSub.get();
-      for (final doc in prodSnap.docs) {
-        try {
-          final data = Map<String, dynamic>.from(doc.data());
-          data['id'] = doc.id;
-          data['pharmacy_id'] = pharmacyId;
-          addDocToResultMap(doc.id, MedicineModel.fromJson(data));
-        } catch (e) {
-          debugPrint('[InventoryRepository] Error parsing products doc ${doc.id}: $e');
-        }
-      }
-    } catch (e) {
-      debugPrint('[InventoryRepository] products get error: $e');
+      return q;
     }
 
-    // 1b. Fetch from pharmacy Products subcollection (uppercase): pharmacies/{pharmacyId}/Products
+    final prodSub = applyFilter(pharmacyDoc.collection(FirestoreCollections.products));
+    final prodCapSub = applyFilter(pharmacyDoc.collection('Products'));
+    final medSub = applyFilter(pharmacyDoc.collection(FirestoreCollections.medicines));
+    final stockSub = applyFilter(pharmacyDoc.collection(FirestoreCollections.stocks));
+    final rootMed = applyFilter(_firestore.collection(FirestoreCollections.medicines).where('pharmacy_id', isEqualTo: pharmacyId));
+    final rootProd = applyFilter(_firestore.collection(FirestoreCollections.products).where('pharmacy_id', isEqualTo: pharmacyId));
+    final rootCapProd = applyFilter(_firestore.collection('Products').where('pharmacy_id', isEqualTo: pharmacyId));
+
     try {
-      Query<Map<String, dynamic>> prodCapSub = pharmacyDoc.collection('Products');
-      if (filter == 'inactive') {
-        prodCapSub = prodCapSub.where('is_active', isEqualTo: false);
-      } else if (filter != 'all') {
-        prodCapSub = prodCapSub.where('is_active', isEqualTo: true);
-      }
-      final prodCapSnap = await prodCapSub.get();
-      for (final doc in prodCapSnap.docs) {
-        try {
-          final data = Map<String, dynamic>.from(doc.data());
-          data['id'] = doc.id;
-          data['pharmacy_id'] = pharmacyId;
-          addDocToResultMap(doc.id, MedicineModel.fromJson(data));
-        } catch (e) {
-          debugPrint('[InventoryRepository] Error parsing Products doc ${doc.id}: $e');
+      final snaps = await Future.wait([
+        prodSub.getFast().catchError((_) => _firestore.collection('empty_fallback').getFast()),
+        prodCapSub.getFast().catchError((_) => _firestore.collection('empty_fallback').getFast()),
+        medSub.getFast().catchError((_) => _firestore.collection('empty_fallback').getFast()),
+        stockSub.getFast().catchError((_) => _firestore.collection('empty_fallback').getFast()),
+        rootMed.getFast().catchError((_) => _firestore.collection('empty_fallback').getFast()),
+        rootProd.getFast().catchError((_) => _firestore.collection('empty_fallback').getFast()),
+        rootCapProd.getFast().catchError((_) => _firestore.collection('empty_fallback').getFast()),
+      ]);
+
+      for (final snap in snaps) {
+        for (final doc in snap.docs) {
+          try {
+            final data = Map<String, dynamic>.from(doc.data());
+            data['id'] = doc.id;
+            data['pharmacy_id'] = pharmacyId;
+            addDocToResultMap(doc.id, MedicineModel.fromJson(data));
+          } catch (_) {}
         }
-      }
-    } catch (e) {
-      debugPrint('[InventoryRepository] Products (uppercase) get error: $e');
-    }
-
-    // 2. Fetch from pharmacy medicines subcollection: pharmacies/{pharmacyId}/medicines
-    try {
-      Query<Map<String, dynamic>> medSub = pharmacyDoc.collection(FirestoreCollections.medicines);
-      if (filter == 'inactive') {
-        medSub = medSub.where('is_active', isEqualTo: false);
-      } else if (filter != 'all') {
-        medSub = medSub.where('is_active', isEqualTo: true);
-      }
-      final medSnap = await medSub.get();
-      for (final doc in medSnap.docs) {
-        try {
-          final data = Map<String, dynamic>.from(doc.data());
-          data['id'] = doc.id;
-          data['pharmacy_id'] = pharmacyId;
-          addDocToResultMap(doc.id, MedicineModel.fromJson(data));
-        } catch (e) {
-          debugPrint('[InventoryRepository] Error parsing medicines doc ${doc.id}: $e');
-        }
-      }
-    } catch (e) {
-      debugPrint('[InventoryRepository] medicines get error: $e');
-    }
-
-    // 3. Fetch from pharmacy stocks subcollection: pharmacies/{pharmacyId}/stocks
-    try {
-      Query<Map<String, dynamic>> subQuery = pharmacyDoc.collection(FirestoreCollections.stocks);
-      if (filter == 'inactive') {
-        subQuery = subQuery.where('is_active', isEqualTo: false);
-      } else if (filter != 'all') {
-        subQuery = subQuery.where('is_active', isEqualTo: true);
-      }
-
-      final subSnap = await subQuery.get();
-      for (final doc in subSnap.docs) {
-        try {
-          final data = Map<String, dynamic>.from(doc.data());
-          data['id'] = doc.id;
-          data['pharmacy_id'] = pharmacyId;
-          addDocToResultMap(doc.id, MedicineModel.fromJson(data));
-        } catch (e) {
-          debugPrint('[InventoryRepository] Error parsing stocks doc ${doc.id}: $e');
-        }
-      }
-    } catch (e) {
-      debugPrint('[InventoryRepository] stocks get error: $e');
-    }
-
-    // 4. Also fetch from root medicines, products, Products, and stocks collections and merge
-    try {
-      Query<Map<String, dynamic>> query = _firestore
-          .collection(FirestoreCollections.medicines)
-          .where('pharmacy_id', isEqualTo: pharmacyId);
-
-      if (filter == 'inactive') {
-        query = query.where('is_active', isEqualTo: false);
-      } else if (filter != 'all') {
-        query = query.where('is_active', isEqualTo: true);
-      }
-
-      final snapshot = await query.get();
-      for (final doc in snapshot.docs) {
-        try {
-          final data = Map<String, dynamic>.from(doc.data());
-          data['id'] = doc.id;
-          addDocToResultMap(doc.id, MedicineModel.fromJson(data));
-        } catch (_) {}
-      }
-    } catch (_) {}
-
-    try {
-      Query<Map<String, dynamic>> prodQuery = _firestore
-          .collection(FirestoreCollections.products)
-          .where('pharmacy_id', isEqualTo: pharmacyId);
-
-      if (filter == 'inactive') {
-        prodQuery = prodQuery.where('is_active', isEqualTo: false);
-      } else if (filter != 'all') {
-        prodQuery = prodQuery.where('is_active', isEqualTo: true);
-      }
-
-      final prodSnapshot = await prodQuery.get();
-      for (final doc in prodSnapshot.docs) {
-        try {
-          final data = Map<String, dynamic>.from(doc.data());
-          data['id'] = doc.id;
-          addDocToResultMap(doc.id, MedicineModel.fromJson(data));
-        } catch (_) {}
-      }
-    } catch (_) {}
-
-    try {
-      Query<Map<String, dynamic>> capProdQuery = _firestore
-          .collection('Products')
-          .where('pharmacy_id', isEqualTo: pharmacyId);
-
-      if (filter == 'inactive') {
-        capProdQuery = capProdQuery.where('is_active', isEqualTo: false);
-      } else if (filter != 'all') {
-        capProdQuery = capProdQuery.where('is_active', isEqualTo: true);
-      }
-
-      final capProdSnapshot = await capProdQuery.get();
-      for (final doc in capProdSnapshot.docs) {
-        try {
-          final data = Map<String, dynamic>.from(doc.data());
-          data['id'] = doc.id;
-          addDocToResultMap(doc.id, MedicineModel.fromJson(data));
-        } catch (_) {}
       }
     } catch (_) {}
 
@@ -578,7 +463,7 @@ class InventoryRepository {
     }
 
     try {
-      final prodDoc = await _firestore.collection(FirestoreCollections.products).doc(id).get();
+      final prodDoc = await _firestore.collection(FirestoreCollections.products).doc(id).getFast();
       if (prodDoc.exists && prodDoc.data() != null) {
         final data = Map<String, dynamic>.from(prodDoc.data()!);
         data['id'] = prodDoc.id;
@@ -586,7 +471,7 @@ class InventoryRepository {
       }
     } catch (_) {}
 
-    final doc = await _firestore.collection(FirestoreCollections.medicines).doc(id).get();
+    final doc = await _firestore.collection(FirestoreCollections.medicines).doc(id).getFast();
     if (!doc.exists || doc.data() == null) return null;
     final data = Map<String, dynamic>.from(doc.data()!);
     data['id'] = doc.id;
@@ -595,34 +480,37 @@ class InventoryRepository {
 
   Future<List<BatchModel>> getBatches(String medicineId, [String? pharmacyId]) async {
     final Map<String, BatchModel> batchMap = {};
+    final List<Future<QuerySnapshot<Map<String, dynamic>>>> futures = [];
 
     if (pharmacyId != null && pharmacyId.isNotEmpty) {
-      try {
-        final subSnap = await _firestore
+      futures.add(
+        _firestore
             .collection(FirestoreCollections.pharmacies)
             .doc(pharmacyId)
             .collection(FirestoreCollections.batches)
             .where('medicine_id', isEqualTo: medicineId)
-            .get();
-        for (final doc in subSnap.docs) {
-          final data = Map<String, dynamic>.from(doc.data());
-          data['id'] = doc.id;
-          batchMap[doc.id] = BatchModel.fromJson(data);
-        }
-      } catch (_) {}
+            .getFast()
+            .catchError((_) => _firestore.collection('empty_fallback').getFast()),
+      );
     }
 
-    try {
-      final snapshot = await _firestore
+    futures.add(
+      _firestore
           .collection(FirestoreCollections.batches)
           .where('medicine_id', isEqualTo: medicineId)
-          .get();
+          .getFast()
+          .catchError((_) => _firestore.collection('empty_fallback').getFast()),
+    );
 
-      for (final doc in snapshot.docs) {
-        final data = Map<String, dynamic>.from(doc.data());
-        data['id'] = doc.id;
-        if (!batchMap.containsKey(doc.id)) {
-          batchMap[doc.id] = BatchModel.fromJson(data);
+    try {
+      final snaps = await Future.wait(futures);
+      for (final snap in snaps) {
+        for (final doc in snap.docs) {
+          final data = Map<String, dynamic>.from(doc.data());
+          data['id'] = doc.id;
+          if (!batchMap.containsKey(doc.id)) {
+            batchMap[doc.id] = BatchModel.fromJson(data);
+          }
         }
       }
     } catch (_) {}
