@@ -38,18 +38,23 @@ class PlanCard extends ConsumerWidget {
       resolvedExpiry = 'No Expiry Set';
     }
 
+    final tokens = context.tokens;
     final VoidCallback effectiveOnManage = onManage ?? () => showPlanUpgradeDialog(context);
 
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        gradient: AppColorsTokens.brandGradient,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [tokens.colors.brand1, tokens.colors.brand2],
+        ),
         borderRadius: BorderRadius.circular(AppRadiusTokens.planCard),
-        boxShadow: const [
+        boxShadow: [
           BoxShadow(
-            color: Color(0x33064E4B),
-            blurRadius: 16,
-            offset: Offset(0, 6),
+            color: tokens.colors.brand2.withValues(alpha: 0.35),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -153,11 +158,11 @@ class PlanCard extends ConsumerWidget {
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Text(
-                        resolvedPending ? 'View Upgrade Status' : 'Manage & Upgrade Plan',
-                        style: const TextStyle(
+                        resolvedPending ? 'Upgrade Pending' : 'Manage plan',
+                        style: TextStyle(
                           fontSize: 12,
                           fontWeight: FontWeight.w600,
-                          color: AppColorsTokens.tooltipDark, // #05343A
+                          color: tokens.colors.brand2,
                         ),
                       ),
                     ],

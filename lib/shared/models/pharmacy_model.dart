@@ -1,4 +1,5 @@
 import 'approval_status.dart';
+import 'user_role.dart';
 
 class PharmacyModel {
   final String id;
@@ -185,20 +186,81 @@ class PharmacyModel {
   bool get isEnterprisePlan => activePlan.toLowerCase().contains('enter');
 
   /// Maximum staff members allowed:
-  /// Standard: 2 staff (e.g. 1 cashier + 1 storekeeper, or 2 total staff)
-  /// Professional & Enterprise: Unlimited (null)
-  int? get maxStaff => isStandardPlan ? 2 : null;
+  /// Standard: 1 staff member total (1 Cashier OR 1 Storekeeper)
+  /// Professional: 6 staff members total (Up to 3 Cashiers + Up to 3 Storekeepers)
+  /// Enterprise: Unlimited staff* (null)
+  int? get maxStaff {
+    if (isStandardPlan) return 1;
+    if (isProfessionalPlan) return 6;
+    return null; // Enterprise = unlimited
+  }
 
-  bool canAddMoreStaff(int currentStaffCount) {
+  /// Maximum Cashiers allowed per plan:
+  int? get maxCashiers {
+    if (isStandardPlan) return 1;
+    if (isProfessionalPlan) return 3;
+    return null;
+  }
+
+  /// Maximum Storekeepers allowed per plan:
+  int? get maxStorekeepers {
+    if (isStandardPlan) return 1;
+    if (isProfessionalPlan) return 3;
+    return null;
+  }
+
+  /// Theme presets allowed:
+  /// Standard: 1
+  /// Professional: 3
+  /// Enterprise: 10+
+  int get maxThemePresets {
+    if (isStandardPlan) return 1;
+    if (isProfessionalPlan) return 3;
+    return 10;
+  }
+
+  /// Check whether pharmacy can add more staff:
+  /// - Standard: max 1 total staff (1 Cashier OR 1 Storekeeper)
+  /// - Professional: max 6 total staff (max 3 Cashiers, max 3 Storekeepers)
+  /// - Enterprise: unlimited
+  bool canAddMoreStaff({
+    required int currentTotalStaff,
+    int currentCashiers = 0,
+    int currentStorekeepers = 0,
+    UserRole? targetRole,
+  }) {
+    if (isEnterprisePlan) return true;
+
+    if (isStandardPlan) {
+      return currentTotalStaff < 1;
+    }
+
+    if (isProfessionalPlan) {
+      if (currentTotalStaff >= 6) return false;
+      if (targetRole == UserRole.cashier && currentCashiers >= 3) return false;
+      if (targetRole == UserRole.storekeeper && currentStorekeepers >= 3) return false;
+      return true;
+    }
+
+    return true;
+  }
+
+  /// Backwards-compatible helper for legacy single-count callers
+  bool canAddMoreStaffCount(int currentStaffCount) {
     if (maxStaff == null) return true;
     return currentStaffCount < maxStaff!;
   }
 
   /// Feature gates
   bool get canUseCustomReceiptBranding => !isStandardPlan;
+  bool get canUseCustomThemesAndBranding => isEnterprisePlan;
   bool get canExportExcelReports => isEnterprisePlan;
   bool get canAccessAdvancedReports => !isStandardPlan;
   bool get canAccessBatchExpiryAlerts => !isStandardPlan;
+  bool get canManageCustomerCredit => !isStandardPlan;
+  bool get canManageCashierShifts => !isStandardPlan;
+  bool get canManageSuppliers => !isStandardPlan;
+  bool get canManageMultipleBranches => isEnterprisePlan;
 
   /// Generates a clean domain for staff emails, e.g. "Khan Pharmacy" -> "khanpharmacy.com"
   String get domain {

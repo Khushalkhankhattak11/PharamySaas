@@ -23,7 +23,7 @@ class AlertRow extends StatelessWidget {
     this.caption = 'Items below minimum threshold',
     this.onTap,
   })  : title = 'Low stock items',
-        alertColor = AppColorsTokens.amberText; // #B45309
+        alertColor = AppColorsTokens.amber; // #F59E0B
 
   const AlertRow.expiringSoon({
     super.key,
@@ -31,7 +31,7 @@ class AlertRow extends StatelessWidget {
     this.caption = 'Batches expiring within 30 days',
     this.onTap,
   })  : title = 'Expiring in 30 days',
-        alertColor = AppColorsTokens.orange; // #EA580C
+        alertColor = AppColorsTokens.orange; // #F97316
 
   const AlertRow.expired({
     super.key,
@@ -39,7 +39,7 @@ class AlertRow extends StatelessWidget {
     this.caption = 'Batches passed expiry date',
     this.onTap,
   })  : title = 'Expired batches',
-        alertColor = AppColorsTokens.danger; // #DC2626
+        alertColor = AppColorsTokens.danger; // #EF4444
 
   @override
   Widget build(BuildContext context) {
@@ -53,10 +53,10 @@ class AlertRow extends StatelessWidget {
         child: Container(
           padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
           decoration: BoxDecoration(
-            color: alertColor.withValues(alpha: 0.11),
+            color: alertColor.withValues(alpha: 0.12), // 12% semantic tint
             borderRadius: BorderRadius.circular(AppRadiusTokens.alertRow),
             border: Border.all(
-              color: alertColor.withValues(alpha: 0.28),
+              color: alertColor.withValues(alpha: 0.30), // 30% border
               width: 1,
             ),
           ),
@@ -68,9 +68,10 @@ class AlertRow extends StatelessWidget {
                   children: [
                     Text(
                       title,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w700,
+                        color: tokens.colors.ink,
                       ),
                     ),
                     const SizedBox(height: 2),
@@ -78,6 +79,7 @@ class AlertRow extends StatelessWidget {
                       caption,
                       style: TextStyle(
                         fontSize: 12,
+                        fontWeight: FontWeight.w400,
                         color: tokens.colors.muted,
                       ),
                     ),
@@ -101,4 +103,3 @@ class AlertRow extends StatelessWidget {
     );
   }
 }
-

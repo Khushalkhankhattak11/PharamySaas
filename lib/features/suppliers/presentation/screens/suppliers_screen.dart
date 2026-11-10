@@ -160,23 +160,49 @@ class _SuppliersScreenState extends ConsumerState<SuppliersScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
         // Controls Row
-        Row(
-          children: [
-            Expanded(
-              child: AppSearchField(
-                controller: _searchController,
-                maxWidth: double.infinity,
-                placeholder: 'Search supplier name, phone, or address...',
-                onChanged: (val) => setState(() => _searchQuery = val.toLowerCase()),
-              ),
-            ),
-            const SizedBox(width: 12),
-            AppButton(
-              text: '+ Add Supplier',
-              icon: const Icon(LucideIcons.plus, size: 16, color: Colors.white),
-              onPressed: () => _showAddEditDialog(context),
-            ),
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isNarrow = constraints.maxWidth < 480;
+
+            if (isNarrow) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AppSearchField(
+                    controller: _searchController,
+                    maxWidth: double.infinity,
+                    placeholder: 'Search supplier name, phone, or address...',
+                    onChanged: (val) => setState(() => _searchQuery = val.toLowerCase()),
+                  ),
+                  const SizedBox(height: 10),
+                  AppButton(
+                    text: '+ Add Supplier',
+                    icon: const Icon(LucideIcons.plus, size: 16, color: Colors.white),
+                    onPressed: () => _showAddEditDialog(context),
+                  ),
+                ],
+              );
+            }
+
+            return Row(
+              children: [
+                Expanded(
+                  child: AppSearchField(
+                    controller: _searchController,
+                    maxWidth: double.infinity,
+                    placeholder: 'Search supplier name, phone, or address...',
+                    onChanged: (val) => setState(() => _searchQuery = val.toLowerCase()),
+                  ),
+                ),
+                const SizedBox(width: 12),
+                AppButton(
+                  text: '+ Add Supplier',
+                  icon: const Icon(LucideIcons.plus, size: 16, color: Colors.white),
+                  onPressed: () => _showAddEditDialog(context),
+                ),
+              ],
+            );
+          },
         ),
         const SizedBox(height: 20),
 

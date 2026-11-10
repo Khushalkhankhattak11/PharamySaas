@@ -32,20 +32,21 @@ class AppDataTable extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
-    final isPhone = MediaQuery.of(context).size.width < 600;
-
-    if (isPhone && mobileCards != null && mobileCards!.isNotEmpty) {
-      return ListView.separated(
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        itemCount: mobileCards!.length,
-        separatorBuilder: (_, __) => const SizedBox(height: 10),
-        itemBuilder: (_, idx) => mobileCards![idx],
-      );
-    }
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        final isNarrow = constraints.maxWidth < 600;
+
+        if (isNarrow && mobileCards != null && mobileCards!.isNotEmpty) {
+          return ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: mobileCards!.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 10),
+            itemBuilder: (_, idx) => mobileCards![idx],
+          );
+        }
+
         final tableWidget = Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [

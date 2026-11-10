@@ -39,25 +39,52 @@ class _PurchasesScreenState extends ConsumerState<PurchasesScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           // Controls Row
-          Row(
-            children: [
-              Expanded(
-                child: AppSearchField(
-                  controller: _searchController,
-                  maxWidth: double.infinity,
-                  placeholder: 'Search invoice # or supplier...',
-                  onChanged: (val) =>
-                      setState(() => _searchQuery = val.toLowerCase()),
-                ),
-              ),
-              const SizedBox(width: 12),
-              AppButton(
-                text: '+ New Stock-In',
-                icon:
-                    const Icon(LucideIcons.plus, size: 16, color: Colors.white),
-                onPressed: () => context.push('/purchases/new'),
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow = constraints.maxWidth < 480;
+
+              if (isNarrow) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AppSearchField(
+                      controller: _searchController,
+                      maxWidth: double.infinity,
+                      placeholder: 'Search invoice # or supplier...',
+                      onChanged: (val) =>
+                          setState(() => _searchQuery = val.toLowerCase()),
+                    ),
+                    const SizedBox(height: 10),
+                    AppButton(
+                      text: '+ New Stock-In',
+                      icon: const Icon(LucideIcons.plus, size: 16, color: Colors.white),
+                      onPressed: () => context.push('/purchases/new'),
+                    ),
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(
+                    child: AppSearchField(
+                      controller: _searchController,
+                      maxWidth: double.infinity,
+                      placeholder: 'Search invoice # or supplier...',
+                      onChanged: (val) =>
+                          setState(() => _searchQuery = val.toLowerCase()),
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  AppButton(
+                    text: '+ New Stock-In',
+                    icon:
+                        const Icon(LucideIcons.plus, size: 16, color: Colors.white),
+                    onPressed: () => context.push('/purchases/new'),
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 20),
 

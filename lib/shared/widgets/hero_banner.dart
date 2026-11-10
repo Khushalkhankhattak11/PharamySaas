@@ -141,6 +141,7 @@ class HeroBanner extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final tokens = context.tokens;
     final isPhone = MediaQuery.of(context).size.width < 600;
 
     return Container(
@@ -178,7 +179,7 @@ class HeroBanner extends StatelessWidget {
                     center: const Alignment(0.85, -0.2),
                     radius: 0.85,
                     colors: [
-                      AppColorsTokens.glow.withValues(alpha: 0.45),
+                      tokens.colors.glow.withValues(alpha: 0.45),
                       Colors.transparent,
                     ],
                     stops: const [0.0, 0.6],

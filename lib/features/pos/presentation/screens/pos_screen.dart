@@ -7,6 +7,7 @@ import '../../../../shared/models/sale_model.dart';
 import '../../../../shared/widgets/app_button.dart';
 import '../../../../shared/widgets/app_search_field.dart';
 import '../../../../shared/widgets/loading_skeleton.dart';
+import '../../../../shared/widgets/receipt_preview.dart';
 import '../../../../shared/widgets/section_card.dart';
 import '../../../auth/presentation/controllers/auth_controller.dart';
 import '../../../qr/presentation/widgets/universal_scanner_dialog.dart';
@@ -79,48 +80,55 @@ class _PosScreenState extends ConsumerState<PosScreen> {
 
   void _showReceiptDialog(SaleModel sale) {
     final pharmacy = ref.read(currentPharmacyProvider).value;
-    final currency = pharmacy?.currency ?? 'Rs';
+    final receiptItems = sale.items
+        .map((item) => ReceiptLineItem(
+              name: item.medicineName,
+              qty: item.quantity,
+              price: item.unitPrice,
+            ))
+        .toList();
 
     showDialog(
       context: context,
       barrierDismissible: false,
       builder: (ctx) => AlertDialog(
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadiusTokens.largeCard)),
-        title: Row(
+        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(AppRadiusTokens.card)),
+        title: const Row(
           children: [
-            const Icon(LucideIcons.checkCircle2, color: AppColorsTokens.success, size: 24),
-            const SizedBox(width: 10),
-            Text('Sale Completed! (#${sale.invoiceNo})', style: const TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
+            Icon(LucideIcons.checkCircle2, color: AppColorsTokens.success, size: 24),
+            SizedBox(width: 10),
+            Text('Sale Saved!', style: TextStyle(fontSize: 18, fontWeight: FontWeight.w800)),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Grand Total: $currency ${sale.total.toStringAsFixed(2)}',
-              style: const TextStyle(fontSize: 20, fontWeight: FontWeight.w800),
+        content: SizedBox(
+          width: 310,
+          child: SingleChildScrollView(
+            child: ReceiptPreview(
+              pharmacyName: pharmacy?.name ?? 'PharmaCore',
+              address: pharmacy?.address,
+              phone: pharmacy?.phone,
+              invoiceNumber: sale.invoiceNo.toString(),
+              date: sale.createdAt,
+              cashierName: sale.cashierName,
+              items: receiptItems,
+              subtotal: sale.subtotal,
+              discount: sale.discount,
+              total: sale.total,
+              footer: pharmacy?.receiptFooter ?? 'Thank you for your visit!',
             ),
-            const SizedBox(height: 6),
-            Text(
-              'Payment: ${sale.paymentMethod} • Customer: ${sale.customerName}',
-              style: const TextStyle(fontSize: 13, color: Color(0xFF4B6567)),
-            ),
-            const SizedBox(height: 12),
-            const Text('Receipt is ready to print or share.'),
-          ],
+          ),
         ),
         actions: [
-          TextButton.icon(
+          GhostButton(
+            text: 'New Sale',
+            icon: const Icon(LucideIcons.shoppingBag, size: 16),
             onPressed: () {
               Navigator.pop(ctx);
               ref.read(cartControllerProvider.notifier).clearCart();
             },
-            icon: const Icon(LucideIcons.shoppingBag, size: 16),
-            label: const Text('New Sale'),
           ),
-          AppButton(
-            text: 'Print Receipt (80mm)',
+          PrimaryButton(
+            text: 'Print (80mm)',
             icon: const Icon(LucideIcons.printer, size: 16, color: Colors.white),
             onPressed: () async {
               if (pharmacy != null) {
@@ -144,7 +152,7 @@ class _PosScreenState extends ConsumerState<PosScreen> {
     final pharmacy = ref.watch(currentPharmacyProvider).value;
     final currency = pharmacy?.currency ?? 'Rs';
     final screenWidth = MediaQuery.of(context).size.width;
-    final isDesktop = screenWidth >= 1024;
+    final isDesktop = screenWidth >= 960;
 
     return Material(
       type: MaterialType.transparency,
@@ -331,7 +339,7 @@ class _PosScreenState extends ConsumerState<PosScreen> {
                               );
                             },
                           ),
-                          _buildPagination(totalItems, totalPages),
+                          _buildPagination(totalItems, totalPages, tokens),
                         ],
                       );
                     },
@@ -431,6 +439,7 @@ class _PosScreenState extends ConsumerState<PosScreen> {
                       children: [
                         _stepperButton(
                           icon: LucideIcons.minus,
+                          tokens: tokens,
                           onTap: () => ref.read(cartControllerProvider.notifier).updateQuantity(item.medicineId, item.quantity - 1),
                         ),
                         Padding(
@@ -442,6 +451,7 @@ class _PosScreenState extends ConsumerState<PosScreen> {
                         ),
                         _stepperButton(
                           icon: LucideIcons.plus,
+                          tokens: tokens,
                           onTap: () => ref.read(cartControllerProvider.notifier).updateQuantity(item.medicineId, item.quantity + 1),
                         ),
                       ],
@@ -588,18 +598,24 @@ class _PosScreenState extends ConsumerState<PosScreen> {
     );
   }
 
-  Widget _stepperButton({required IconData icon, required VoidCallback onTap}) {
+  Widget _stepperButton({
+    required IconData icon,
+    required AppTokens tokens,
+    required VoidCallback onTap,
+  }) {
     return Container(
-      width: 24,
-      height: 24,
+      width: 28,
+      height: 28,
       decoration: BoxDecoration(
-        color: AppColorsTokens.light.track,
+        color: tokens.colors.track,
         shape: BoxShape.circle,
       ),
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(12),
-        child: Icon(icon, size: 12, color: AppColorsTokens.light.ink),
+        borderRadius: BorderRadius.circular(14),
+        child: Center(
+          child: Icon(icon, size: 14, color: tokens.colors.ink),
+        ),
       ),
     );
   }
@@ -723,7 +739,11 @@ class _PosScreenState extends ConsumerState<PosScreen> {
                   LayoutBuilder(
                     builder: (context, constraints) {
                       final width = constraints.maxWidth;
-                      final crossAxisCount = width >= 600 ? 3 : 2;
+                      final crossAxisCount = width >= 720
+                          ? 4
+                          : (width >= 500
+                              ? 3
+                              : 2);
 
                       return GridView.builder(
                         shrinkWrap: true,
@@ -771,7 +791,7 @@ class _PosScreenState extends ConsumerState<PosScreen> {
                       );
                     },
                   ),
-                  _buildPagination(totalItems, totalPages),
+                  _buildPagination(totalItems, totalPages, tokens),
                 ],
               );
             },
@@ -883,27 +903,29 @@ class _PosScreenState extends ConsumerState<PosScreen> {
             ),
           ],
         ),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Divider(height: 1),
-            const SizedBox(height: 12),
-            _buildDetailRow('Retail Price', '$currency ${med.salePrice.toStringAsFixed(2)}'),
-            _buildDetailRow('Stock Available', '${med.availableStock} ${med.unit}'),
-            _buildDetailRow('Min Stock Level', '${med.minStockLevel} ${med.unit}'),
-            if (med.brandName != null && med.brandName!.trim().isNotEmpty)
-              _buildDetailRow('Brand / Manufacturer', med.brandName!.trim()),
-            if (med.category != null && med.category!.trim().isNotEmpty)
-              _buildDetailRow('Category', med.category!.trim()),
-            if (med.barcode != null && med.barcode!.trim().isNotEmpty)
-              _buildDetailRow('Barcode', med.barcode!.trim()),
-            if (med.nearestExpiry != null)
-              _buildDetailRow(
-                'Expiry Date',
-                '${med.nearestExpiry!.day.toString().padLeft(2, '0')}/${med.nearestExpiry!.month.toString().padLeft(2, '0')}/${med.nearestExpiry!.year}',
-              ),
-          ],
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Divider(height: 1),
+              const SizedBox(height: 12),
+              _buildDetailRow('Retail Price', '$currency ${med.salePrice.toStringAsFixed(2)}'),
+              _buildDetailRow('Stock Available', '${med.availableStock} ${med.unit}'),
+              _buildDetailRow('Min Stock Level', '${med.minStockLevel} ${med.unit}'),
+              if (med.brandName != null && med.brandName!.trim().isNotEmpty)
+                _buildDetailRow('Brand / Manufacturer', med.brandName!.trim()),
+              if (med.category != null && med.category!.trim().isNotEmpty)
+                _buildDetailRow('Category', med.category!.trim()),
+              if (med.barcode != null && med.barcode!.trim().isNotEmpty)
+                _buildDetailRow('Barcode', med.barcode!.trim()),
+              if (med.nearestExpiry != null)
+                _buildDetailRow(
+                  'Expiry Date',
+                  '${med.nearestExpiry!.day.toString().padLeft(2, '0')}/${med.nearestExpiry!.month.toString().padLeft(2, '0')}/${med.nearestExpiry!.year}',
+                ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -949,23 +971,17 @@ class _PosScreenState extends ConsumerState<PosScreen> {
     );
   }
 
-  Widget _buildPagination(int totalItems, int totalPages) {
+  Widget _buildPagination(int totalItems, int totalPages, AppTokens tokens) {
     if (totalItems <= 0) return const SizedBox.shrink();
 
     return Container(
       margin: const EdgeInsets.only(top: 16, bottom: 8),
       padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(color: const Color(0xFFE5E7EB)),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.02),
-            blurRadius: 4,
-            offset: const Offset(0, 1),
-          ),
-        ],
+        color: tokens.colors.card,
+        borderRadius: BorderRadius.circular(AppRadiusTokens.input),
+        border: Border.all(color: tokens.colors.line, width: 1),
+        boxShadow: [tokens.colors.shadow],
       ),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -973,10 +989,11 @@ class _PosScreenState extends ConsumerState<PosScreen> {
           Flexible(
             child: Text(
               'Showing ${(_currentPage - 1) * _itemsPerPage + 1}–${((_currentPage - 1) * _itemsPerPage + _itemsPerPage).clamp(1, totalItems)} of $totalItems',
-              style: const TextStyle(
+              style: TextStyle(
                 fontSize: 12,
                 fontWeight: FontWeight.w500,
-                color: Color(0xFF6B7280),
+                color: tokens.colors.muted,
+                fontFeatures: AppTypographyTokens.tabularFigures,
               ),
             ),
           ),
@@ -986,6 +1003,7 @@ class _PosScreenState extends ConsumerState<PosScreen> {
               _buildPageNavButton(
                 icon: LucideIcons.chevronLeft,
                 isEnabled: _currentPage > 1,
+                tokens: tokens,
                 onTap: () {
                   if (_currentPage > 1) {
                     setState(() => _currentPage--);
@@ -993,11 +1011,12 @@ class _PosScreenState extends ConsumerState<PosScreen> {
                 },
               ),
               const SizedBox(width: 4),
-              ..._buildPageNumbers(totalPages),
+              ..._buildPageNumbers(totalPages, tokens),
               const SizedBox(width: 4),
               _buildPageNavButton(
                 icon: LucideIcons.chevronRight,
                 isEnabled: _currentPage < totalPages,
+                tokens: tokens,
                 onTap: () {
                   if (_currentPage < totalPages) {
                     setState(() => _currentPage++);
@@ -1014,47 +1033,48 @@ class _PosScreenState extends ConsumerState<PosScreen> {
   Widget _buildPageNavButton({
     required IconData icon,
     required bool isEnabled,
+    required AppTokens tokens,
     required VoidCallback onTap,
   }) {
     return InkWell(
       onTap: isEnabled ? onTap : null,
-      borderRadius: BorderRadius.circular(6),
+      borderRadius: BorderRadius.circular(8),
       child: Container(
         width: 32,
         height: 32,
         alignment: Alignment.center,
         decoration: BoxDecoration(
-          color: isEnabled ? const Color(0xFFF9FAFB) : const Color(0xFFF3F4F6),
-          borderRadius: BorderRadius.circular(6),
+          color: isEnabled ? tokens.colors.card : tokens.colors.track,
+          borderRadius: BorderRadius.circular(8),
           border: Border.all(
-            color: isEnabled ? const Color(0xFFD1D5DB) : const Color(0xFFE5E7EB),
+            color: isEnabled ? tokens.colors.line : tokens.colors.line.withValues(alpha: 0.5),
           ),
         ),
         child: Icon(
           icon,
           size: 16,
-          color: isEnabled ? const Color(0xFF374151) : const Color(0xFF9CA3AF),
+          color: isEnabled ? tokens.colors.ink : tokens.colors.muted,
         ),
       ),
     );
   }
 
-  List<Widget> _buildPageNumbers(int totalPages) {
+  List<Widget> _buildPageNumbers(int totalPages, AppTokens tokens) {
     final List<Widget> list = [];
 
     if (totalPages <= 7) {
       for (int i = 1; i <= totalPages; i++) {
-        list.add(_buildPageNumberButton(i));
+        list.add(_buildPageNumberButton(i, tokens));
       }
       return list;
     }
 
-    list.add(_buildPageNumberButton(1));
+    list.add(_buildPageNumberButton(1, tokens));
 
     if (_currentPage > 3) {
-      list.add(const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 2),
-        child: Text('…', style: TextStyle(color: Color(0xFF9CA3AF), fontWeight: FontWeight.bold)),
+      list.add(Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: Text('…', style: TextStyle(color: tokens.colors.muted, fontWeight: FontWeight.bold)),
       ));
     }
 
@@ -1063,46 +1083,52 @@ class _PosScreenState extends ConsumerState<PosScreen> {
 
     for (int i = start; i <= end; i++) {
       if (i > 1 && i < totalPages) {
-        list.add(_buildPageNumberButton(i));
+        list.add(_buildPageNumberButton(i, tokens));
       }
     }
 
     if (_currentPage < totalPages - 2) {
-      list.add(const Padding(
-        padding: EdgeInsets.symmetric(horizontal: 2),
-        child: Text('…', style: TextStyle(color: Color(0xFF9CA3AF), fontWeight: FontWeight.bold)),
+      list.add(Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 2),
+        child: Text('…', style: TextStyle(color: tokens.colors.muted, fontWeight: FontWeight.bold)),
       ));
     }
 
-    list.add(_buildPageNumberButton(totalPages));
+    list.add(_buildPageNumberButton(totalPages, tokens));
 
     return list;
   }
 
-  Widget _buildPageNumberButton(int page) {
+  Widget _buildPageNumberButton(int page, AppTokens tokens) {
     final isCurrent = page == _currentPage;
 
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 2),
       child: InkWell(
         onTap: () => setState(() => _currentPage = page),
-        borderRadius: BorderRadius.circular(6),
+        borderRadius: BorderRadius.circular(8),
         child: Container(
           width: 32,
           height: 32,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            gradient: isCurrent ? AppColorsTokens.brandGradient : null,
-            color: isCurrent ? null : Colors.white,
-            borderRadius: BorderRadius.circular(6),
+            gradient: isCurrent
+                ? LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [tokens.colors.brand1, tokens.colors.brand2],
+                  )
+                : null,
+            color: isCurrent ? null : tokens.colors.card,
+            borderRadius: BorderRadius.circular(8),
             border: Border.all(
-              color: isCurrent ? Colors.transparent : const Color(0xFFD1D5DB),
+              color: isCurrent ? Colors.transparent : tokens.colors.line,
               width: 1,
             ),
             boxShadow: isCurrent
                 ? [
                     BoxShadow(
-                      color: AppColorsTokens.brand.withValues(alpha: 0.3),
+                      color: tokens.colors.brand1.withValues(alpha: 0.3),
                       blurRadius: 4,
                       offset: const Offset(0, 1),
                     ),
@@ -1114,7 +1140,8 @@ class _PosScreenState extends ConsumerState<PosScreen> {
             style: TextStyle(
               fontSize: 12,
               fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w500,
-              color: isCurrent ? Colors.white : const Color(0xFF374151),
+              color: isCurrent ? Colors.white : tokens.colors.ink,
+              fontFeatures: AppTypographyTokens.tabularFigures,
             ),
           ),
         ),
@@ -1123,7 +1150,7 @@ class _PosScreenState extends ConsumerState<PosScreen> {
   }
 }
 
-class _MedicineCard extends StatelessWidget {
+class _MedicineCard extends StatefulWidget {
   final MedicineModel med;
   final String currency;
   final bool isOutOfStock;
@@ -1139,138 +1166,174 @@ class _MedicineCard extends StatelessWidget {
   });
 
   @override
+  State<_MedicineCard> createState() => _MedicineCardState();
+}
+
+class _MedicineCardState extends State<_MedicineCard> {
+  bool _isHovered = false;
+
+  @override
   Widget build(BuildContext context) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(10),
-        border: Border.all(
-          color: const Color(0xFFE5E7EB),
-          width: 1,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.03),
-            blurRadius: 6,
-            offset: const Offset(0, 2),
+    final tokens = context.tokens;
+    final isOutOfStock = widget.isOutOfStock;
+
+    return MouseRegion(
+      onEnter: (_) => setState(() => _isHovered = true),
+      onExit: (_) => setState(() => _isHovered = false),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 160),
+        transform: _isHovered && !isOutOfStock
+            ? Matrix4.translationValues(0.0, -2.0, 0.0)
+            : Matrix4.identity(),
+        decoration: BoxDecoration(
+          color: tokens.colors.card,
+          borderRadius: BorderRadius.circular(AppRadiusTokens.productCard),
+          border: Border.all(
+            color: _isHovered && !isOutOfStock ? tokens.colors.accent : tokens.colors.line,
+            width: 1,
           ),
-        ],
-      ),
-      child: Material(
-        color: Colors.transparent,
-        child: InkWell(
-          borderRadius: BorderRadius.circular(10),
-          onTap: onTap,
-          child: Padding(
-            padding: const EdgeInsets.fromLTRB(8, 8, 8, 8),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.center,
-              children: [
-                // Top: Product Image
-                Expanded(
-                  child: Stack(
-                    alignment: Alignment.center,
-                    children: [
-                      Container(
-                        width: double.infinity,
+          boxShadow: [
+            BoxShadow(
+              color: (_isHovered && !isOutOfStock
+                      ? tokens.colors.accent
+                      : tokens.colors.brand2)
+                  .withValues(alpha: _isHovered ? 0.12 : 0.04),
+              blurRadius: _isHovered ? 12 : 6,
+              offset: Offset(0, _isHovered ? 4 : 2),
+            ),
+          ],
+        ),
+        child: Opacity(
+          opacity: isOutOfStock ? 0.45 : 1.0,
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              borderRadius: BorderRadius.circular(AppRadiusTokens.productCard),
+              onTap: widget.onTap,
+              child: Padding(
+                padding: const EdgeInsets.all(10),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // Top: Product Image
+                    Expanded(
+                      child: Stack(
                         alignment: Alignment.center,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFFAFAFA),
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: med.imageUrl != null && med.imageUrl!.trim().isNotEmpty
-                            ? ClipRRect(
-                                borderRadius: BorderRadius.circular(8),
-                                child: Image.network(
-                                  med.imageUrl!.trim(),
-                                  fit: BoxFit.contain,
-                                  width: double.infinity,
-                                  height: double.infinity,
-                                  loadingBuilder: (context, child, loadingProgress) {
-                                    if (loadingProgress == null) return child;
-                                    return const Center(
-                                      child: SizedBox(
-                                        width: 18,
-                                        height: 18,
-                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                      ),
-                                    );
-                                  },
-                                  errorBuilder: (_, __, ___) => _buildPlaceholder(),
-                                ),
-                              )
-                            : _buildPlaceholder(),
-                      ),
-                      if (isOutOfStock)
-                        Positioned(
-                          top: 4,
-                          right: 4,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        children: [
+                          Container(
+                            width: double.infinity,
+                            alignment: Alignment.center,
                             decoration: BoxDecoration(
-                              color: Colors.red.shade600,
-                              borderRadius: BorderRadius.circular(4),
+                              color: tokens.colors.track.withValues(alpha: 0.35),
+                              borderRadius: BorderRadius.circular(12),
                             ),
-                            child: const Text(
-                              '0 stock',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 9,
-                                fontWeight: FontWeight.bold,
+                            child: widget.med.imageUrl != null &&
+                                    widget.med.imageUrl!.trim().isNotEmpty
+                                ? ClipRRect(
+                                    borderRadius: BorderRadius.circular(12),
+                                    child: Image.network(
+                                      widget.med.imageUrl!.trim(),
+                                      fit: BoxFit.contain,
+                                      width: double.infinity,
+                                      height: double.infinity,
+                                      loadingBuilder:
+                                          (context, child, loadingProgress) {
+                                        if (loadingProgress == null) return child;
+                                        return Center(
+                                          child: SizedBox(
+                                            width: 18,
+                                            height: 18,
+                                            child: CircularProgressIndicator(
+                                              strokeWidth: 2,
+                                              color: tokens.colors.accent,
+                                            ),
+                                          ),
+                                        );
+                                      },
+                                      errorBuilder: (_, __, ___) =>
+                                          _buildPlaceholder(tokens),
+                                    ),
+                                  )
+                                : _buildPlaceholder(tokens),
+                          ),
+                          if (isOutOfStock)
+                            Positioned(
+                              top: 4,
+                              right: 4,
+                              child: Container(
+                                padding: const EdgeInsets.symmetric(
+                                    horizontal: 6, vertical: 2),
+                                decoration: BoxDecoration(
+                                  color: AppColorsTokens.danger,
+                                  borderRadius: BorderRadius.circular(4),
+                                ),
+                                child: const Text(
+                                  '0 stock',
+                                  style: TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 9,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
                               ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+
+                    // Middle: Name (Centered & Bold as shown in reference)
+                    Text(
+                      widget.med.name,
+                      textAlign: TextAlign.center,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontWeight: FontWeight.w700,
+                        fontSize: 13,
+                        color: isOutOfStock
+                            ? tokens.colors.muted
+                            : tokens.colors.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+
+                    // Bottom: Price (Centered) & Info (i) icon on right
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        const SizedBox(width: 22), // Balances info icon for true centering
+                        Expanded(
+                          child: Text(
+                            '${widget.currency} ${widget.med.salePrice.toStringAsFixed(2)}',
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              color: isOutOfStock
+                                  ? tokens.colors.muted
+                                  : tokens.colors.ink,
+                              fontFeatures: AppTypographyTokens.tabularFigures,
                             ),
                           ),
                         ),
-                    ],
-                  ),
-                ),
-                const SizedBox(height: 6),
-
-                // Middle: Name (Centered & Bold as shown in reference)
-                Text(
-                  med.name,
-                  textAlign: TextAlign.center,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: TextStyle(
-                    fontWeight: FontWeight.w700,
-                    fontSize: 12,
-                    color: isOutOfStock ? const Color(0xFF9CA3AF) : const Color(0xFF1F2937),
-                  ),
-                ),
-                const SizedBox(height: 4),
-
-                // Bottom: Price (Centered) & Info (i) icon on right
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    const SizedBox(width: 20), // Balances info icon for true centering
-                    Expanded(
-                      child: Text(
-                        '$currency ${med.salePrice.toStringAsFixed(2)}',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(
-                          fontSize: 12,
-                          fontWeight: FontWeight.w700,
-                          color: isOutOfStock ? const Color(0xFF9CA3AF) : const Color(0xFF4B5563),
+                        InkWell(
+                          onTap: widget.onInfoTap,
+                          borderRadius: BorderRadius.circular(12),
+                          child: Padding(
+                            padding: const EdgeInsets.all(2.0),
+                            child: Icon(
+                              LucideIcons.info,
+                              size: 16,
+                              color: tokens.colors.muted,
+                            ),
+                          ),
                         ),
-                      ),
-                    ),
-                    InkWell(
-                      onTap: onInfoTap,
-                      borderRadius: BorderRadius.circular(12),
-                      child: Padding(
-                        padding: const EdgeInsets.all(2.0),
-                        child: Icon(
-                          LucideIcons.info,
-                          size: 15,
-                          color: Colors.grey.shade400,
-                        ),
-                      ),
+                      ],
                     ),
                   ],
                 ),
-              ],
+              ),
             ),
           ),
         ),
@@ -1278,14 +1341,14 @@ class _MedicineCard extends StatelessWidget {
     );
   }
 
-  Widget _buildPlaceholder() {
+  Widget _buildPlaceholder(AppTokens tokens) {
     return Container(
       padding: const EdgeInsets.all(8),
       alignment: Alignment.center,
       child: Icon(
         LucideIcons.pill,
         size: 32,
-        color: Colors.grey.shade300,
+        color: tokens.colors.muted.withValues(alpha: 0.5),
       ),
     );
   }

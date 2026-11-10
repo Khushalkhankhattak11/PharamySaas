@@ -30,21 +30,21 @@ class AvatarMenu extends StatelessWidget {
     final avatar = Container(
       width: 42,
       height: 42,
-      decoration: const BoxDecoration(
+      decoration: BoxDecoration(
         shape: BoxShape.circle,
         gradient: LinearGradient(
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF9AD9D0), // mint
-            Color(0xFF0B5D5A), // brand
+            tokens.colors.glow,
+            tokens.colors.brand2,
           ],
         ),
         boxShadow: [
           BoxShadow(
-            color: Color(0x240B5D5A),
+            color: tokens.colors.brand2.withValues(alpha: 0.25),
             blurRadius: 8,
-            offset: Offset(0, 2),
+            offset: const Offset(0, 2),
           ),
         ],
       ),

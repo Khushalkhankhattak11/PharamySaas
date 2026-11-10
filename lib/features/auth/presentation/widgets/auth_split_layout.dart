@@ -82,7 +82,7 @@ class AuthSplitLayout extends StatelessWidget {
                           center: const Alignment(0.85, -0.2),
                           radius: 0.85,
                           colors: [
-                            AppColorsTokens.glow.withValues(alpha: 0.4),
+                            tokens.colors.glow.withValues(alpha: 0.4),
                             Colors.transparent,
                           ],
                           stops: const [0.0, 0.6],

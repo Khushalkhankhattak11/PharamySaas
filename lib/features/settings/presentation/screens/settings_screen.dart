@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 import 'package:lucide_icons_flutter/lucide_icons.dart';
 import '../../../../core/firebase/firebase_providers.dart';
+import '../../../../core/theme/theme_controller.dart';
 import '../../../../core/theme/tokens.dart';
 import '../../../../shared/models/pharmacy_model.dart';
 import '../../../../shared/models/profile_model.dart';
@@ -36,6 +37,48 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   final _ownerNameController = TextEditingController();
   final _ownerPhoneController = TextEditingController();
 
+  // Appearance & Custom Theme Controller
+  final _customHexController = TextEditingController();
+  bool _isHexInitialized = false;
+
+  static const List<Color> _brandSwatches = [
+    Color(0xFF0F766E), // Teal
+    Color(0xFF059669), // Emerald
+    Color(0xFF2563EB), // Blue
+    Color(0xFF4F46E5), // Indigo
+    Color(0xFF7C3AED), // Violet
+    Color(0xFFE11D48), // Rose
+    Color(0xFFEA580C), // Orange
+    Color(0xFF0284C7), // Sky
+    Color(0xFFD97706), // Gold
+    Color(0xFF334155), // Slate
+  ];
+
+  static const List<({String id, String name, bool isDark, Color brand1, Color brand2, Color glow, Color bg, int requiredTier})> _themePresets = [
+    (id: 'ocean', name: 'Ocean', isDark: false, brand1: Color(0xFF1D4ED8), brand2: Color(0xFF0B2A6F), glow: Color(0xFF38BDF8), bg: Color(0xFFF3F8FF), requiredTier: 1),
+    (id: 'violet', name: 'Violet', isDark: false, brand1: Color(0xFF7C3AED), brand2: Color(0xFF3B1B8F), glow: Color(0xFFC084FC), bg: Color(0xFFF7F4FF), requiredTier: 3),
+    (id: 'midnight', name: 'Midnight', isDark: true, brand1: Color(0xFF0891B2), brand2: Color(0xFF0E2F63), glow: Color(0xFF22D3EE), bg: Color(0xFF070B16), requiredTier: 3),
+    (id: 'emerald', name: 'Emerald', isDark: false, brand1: Color(0xFF059669), brand2: Color(0xFF065F46), glow: Color(0xFF34D399), bg: Color(0xFFF2FAF5), requiredTier: 2),
+    (id: 'rose', name: 'Rose', isDark: false, brand1: Color(0xFFE11D48), brand2: Color(0xFF9F1239), glow: Color(0xFFFB7185), bg: Color(0xFFFFF5F7), requiredTier: 2),
+    (id: 'sunset', name: 'Sunset', isDark: false, brand1: Color(0xFFF97316), brand2: Color(0xFFB91C1C), glow: Color(0xFFFBBF24), bg: Color(0xFFFFF6EF), requiredTier: 3),
+    (id: 'graphite', name: 'Graphite', isDark: false, brand1: Color(0xFF1F2937), brand2: Color(0xFF0B1220), glow: Color(0xFF94A3B8), bg: Color(0xFFF6F7F9), requiredTier: 3),
+    (id: 'lagoon', name: 'Lagoon', isDark: false, brand1: Color(0xFF0D9488), brand2: Color(0xFF155E75), glow: Color(0xFF5EEAD4), bg: Color(0xFFEFFCFB), requiredTier: 3),
+    (id: 'forest', name: 'Forest', isDark: true, brand1: Color(0xFF16A34A), brand2: Color(0xFF14532D), glow: Color(0xFF4ADE80), bg: Color(0xFF07110C), requiredTier: 3),
+    (id: 'aurora', name: 'Aurora', isDark: true, brand1: Color(0xFFA855F7), brand2: Color(0xFF4C1D95), glow: Color(0xFFF0ABFC), bg: Color(0xFF0D0817), requiredTier: 3),
+  ];
+
+  Color? _parseHexColor(String hex) {
+    var cleanHex = hex.trim().replaceAll('#', '');
+    if (cleanHex.length == 6) {
+      cleanHex = 'FF$cleanHex';
+    }
+    if (cleanHex.length == 8) {
+      final value = int.tryParse(cleanHex, radix: 16);
+      if (value != null) return Color(value);
+    }
+    return null;
+  }
+
   String _selectedCurrency = 'Rs';
   bool _isPharmacyInitialized = false;
   bool _isProfileInitialized = false;
@@ -61,6 +104,7 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     _footerController.dispose();
     _ownerNameController.dispose();
     _ownerPhoneController.dispose();
+    _customHexController.dispose();
     super.dispose();
   }
 
@@ -314,6 +358,14 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
     final pharmacyAsync = ref.watch(currentPharmacyProvider);
     final profileAsync = ref.watch(currentProfileProvider);
     final isSaving = ref.watch(settingsActionControllerProvider).isLoading;
+    final currentThemeMode = ref.watch(themeModeProvider);
+    final activePreset = ref.watch(themePresetProvider);
+    final customColor = ref.watch(customBrandColorProvider);
+
+    if (!_isHexInitialized) {
+      _customHexController.text = '#${customColor.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
+      _isHexInitialized = true;
+    }
 
     return pharmacyAsync.when(
       loading: () => const Center(
@@ -737,7 +789,151 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
               ),
               const SizedBox(height: 20),
 
-              // 4. Subscription & Plan Status
+              // 4. Appearance & Themes Card
+              SectionCard(
+                title: 'Appearance & Themes',
+                subtitle: 'Personalize your interface with color presets, dark mode, and custom branding',
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    // Display Mode Switcher
+                    Text(
+                      'Display Mode',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: tokens.colors.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 8),
+                    Row(
+                      children: [
+                        _buildDisplayModeButton(
+                          label: 'Light Mode',
+                          icon: LucideIcons.sun,
+                          mode: ThemeMode.light,
+                          isSelected: currentThemeMode == ThemeMode.light,
+                        ),
+                        const SizedBox(width: 10),
+                        _buildDisplayModeButton(
+                          label: 'Dark Mode',
+                          icon: LucideIcons.moon,
+                          mode: ThemeMode.dark,
+                          isSelected: currentThemeMode == ThemeMode.dark,
+                        ),
+                        const SizedBox(width: 10),
+                        _buildDisplayModeButton(
+                          label: 'System',
+                          icon: LucideIcons.laptop,
+                          mode: ThemeMode.system,
+                          isSelected: currentThemeMode == ThemeMode.system,
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Plan Theme Quota Banner
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                      decoration: BoxDecoration(
+                        color: tokens.colors.track,
+                        borderRadius: BorderRadius.circular(AppRadiusTokens.tile),
+                        border: Border.all(color: tokens.colors.line),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            pharmacy.isEnterprisePlan
+                                ? LucideIcons.crown
+                                : (pharmacy.isProfessionalPlan ? LucideIcons.sparkles : LucideIcons.palette),
+                            size: 16,
+                            color: tokens.colors.brand1,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              pharmacy.isEnterprisePlan
+                                  ? 'Enterprise Plan: All 10 themes & custom branding unlocked'
+                                  : (pharmacy.isProfessionalPlan
+                                      ? 'Professional Plan: 3 selectable theme presets enabled'
+                                      : 'Standard Plan: 1 theme preset (Ocean) enabled'),
+                              style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color: tokens.colors.ink,
+                              ),
+                            ),
+                          ),
+                          if (!pharmacy.isEnterprisePlan)
+                            TextButton(
+                              onPressed: () => showPlanUpgradeDialog(context),
+                              child: Text(
+                                pharmacy.isProfessionalPlan ? 'Upgrade to Enterprise' : 'Upgrade Plan',
+                                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                              ),
+                            ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+
+                    // Presets Grid
+                    Text(
+                      'Theme Presets (10 Available)',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w600,
+                        color: tokens.colors.ink,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    LayoutBuilder(
+                      builder: (context, constraints) {
+                        final cardWidth = constraints.maxWidth < 450
+                            ? (constraints.maxWidth - 10) / 2
+                            : (constraints.maxWidth < 750
+                                ? (constraints.maxWidth - 20) / 3
+                                : (constraints.maxWidth - 40) / 5);
+
+                        return Wrap(
+                          spacing: 10,
+                          runSpacing: 10,
+                          children: _themePresets.map((t) {
+                            final isLocked = pharmacy.isStandardPlan
+                                ? t.requiredTier > 1
+                                : (pharmacy.isProfessionalPlan ? t.requiredTier > 2 : false);
+                            final lockLabel = t.requiredTier == 2 ? 'Pro' : 'Enterprise';
+                            final isSelected = activePreset.toLowerCase() == t.id.toLowerCase();
+
+                            return SizedBox(
+                              width: cardWidth.clamp(140.0, 260.0),
+                              child: _buildThemeCard(
+                                id: t.id,
+                                name: t.name,
+                                isDark: t.isDark,
+                                brand1: t.brand1,
+                                brand2: t.brand2,
+                                glow: t.glow,
+                                bg: t.bg,
+                                isLocked: isLocked,
+                                lockTier: lockLabel,
+                                isSelected: isSelected,
+                              ),
+                            );
+                          }).toList(),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 24),
+
+                    // Custom Brand Theme Section (Enterprise)
+                    _buildCustomBrandingSection(context, pharmacy, activePreset, customColor),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+
+              // 5. Subscription & Plan Status
               SectionCard(
                 title: 'Subscription & License',
                 subtitle: 'Your active tier and regulatory credentials',
@@ -820,6 +1016,446 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
           ),
         );
       },
+    );
+  }
+
+  Widget _buildDisplayModeButton({
+    required String label,
+    required IconData icon,
+    required ThemeMode mode,
+    required bool isSelected,
+  }) {
+    final tokens = context.tokens;
+    return Expanded(
+      child: InkWell(
+        onTap: () => ref.read(themeModeProvider.notifier).setThemeMode(mode),
+        borderRadius: BorderRadius.circular(AppRadiusTokens.pill),
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          padding: const EdgeInsets.symmetric(vertical: 10, horizontal: 8),
+          decoration: BoxDecoration(
+            color: isSelected ? tokens.colors.brand1 : tokens.colors.card,
+            borderRadius: BorderRadius.circular(AppRadiusTokens.pill),
+            border: Border.all(
+              color: isSelected ? tokens.colors.brand1 : tokens.colors.line,
+              width: 1.5,
+            ),
+            boxShadow: isSelected
+                ? [
+                    BoxShadow(
+                      color: tokens.colors.brand1.withValues(alpha: 0.25),
+                      blurRadius: 8,
+                      offset: const Offset(0, 2),
+                    )
+                  ]
+                : null,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Icon(
+                icon,
+                size: 16,
+                color: isSelected ? Colors.white : tokens.colors.ink,
+              ),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  label,
+                  style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: isSelected ? FontWeight.bold : FontWeight.w500,
+                    color: isSelected ? Colors.white : tokens.colors.ink,
+                  ),
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildThemeCard({
+    required String id,
+    required String name,
+    required bool isDark,
+    required Color brand1,
+    required Color brand2,
+    required Color glow,
+    required Color bg,
+    required bool isLocked,
+    required String lockTier,
+    required bool isSelected,
+  }) {
+    final tokens = context.tokens;
+    return InkWell(
+      onTap: () {
+        if (isLocked) {
+          showPlanUpgradeDialog(context);
+        } else {
+          ref.read(themePresetProvider.notifier).setThemePreset(id);
+        }
+      },
+      borderRadius: BorderRadius.circular(AppRadiusTokens.tile),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 200),
+        padding: const EdgeInsets.all(12),
+        decoration: BoxDecoration(
+          color: tokens.colors.card,
+          borderRadius: BorderRadius.circular(AppRadiusTokens.tile),
+          border: Border.all(
+            color: isSelected
+                ? tokens.colors.brand1
+                : (isLocked ? tokens.colors.line.withValues(alpha: 0.6) : tokens.colors.line),
+            width: isSelected ? 2 : 1,
+          ),
+          boxShadow: isSelected
+              ? [
+                  BoxShadow(
+                    color: tokens.colors.brand1.withValues(alpha: 0.2),
+                    blurRadius: 10,
+                    offset: const Offset(0, 4),
+                  ),
+                ]
+              : null,
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // Color swatches row
+            Row(
+              children: [
+                _buildColorDot(brand1),
+                const SizedBox(width: 4),
+                _buildColorDot(brand2),
+                const SizedBox(width: 4),
+                _buildColorDot(glow),
+                const SizedBox(width: 4),
+                _buildColorDot(bg, border: true),
+                const Spacer(),
+                if (isSelected)
+                  Container(
+                    padding: const EdgeInsets.all(2),
+                    decoration: const BoxDecoration(
+                      shape: BoxShape.circle,
+                      color: AppColorsTokens.success,
+                    ),
+                    child: const Icon(LucideIcons.check, size: 12, color: Colors.white),
+                  )
+                else if (isLocked)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                    decoration: BoxDecoration(
+                      color: tokens.colors.track,
+                      borderRadius: BorderRadius.circular(AppRadiusTokens.pill),
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Icon(LucideIcons.lock, size: 10, color: tokens.colors.muted),
+                        const SizedBox(width: 3),
+                        Text(
+                          lockTier,
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: tokens.colors.muted,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    name,
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight: isSelected ? FontWeight.bold : FontWeight.w600,
+                      color: isLocked ? tokens.colors.muted : tokens.colors.ink,
+                    ),
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+                if (isDark)
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 1),
+                    decoration: BoxDecoration(
+                      color: tokens.colors.track,
+                      borderRadius: BorderRadius.circular(4),
+                    ),
+                    child: Text(
+                      'Dark',
+                      style: TextStyle(
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        color: tokens.colors.muted,
+                      ),
+                    ),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildColorDot(Color color, {bool border = false}) {
+    return Container(
+      width: 14,
+      height: 14,
+      decoration: BoxDecoration(
+        color: color,
+        shape: BoxShape.circle,
+        border: border ? Border.all(color: Colors.black12, width: 1) : null,
+      ),
+    );
+  }
+
+  Widget _buildCustomBrandingSection(
+    BuildContext context,
+    PharmacyModel pharmacy,
+    String activePreset,
+    Color customColor,
+  ) {
+    final tokens = context.tokens;
+    final isCustomActive = activePreset.toLowerCase() == 'custom';
+
+    if (!pharmacy.isEnterprisePlan) {
+      return Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: tokens.colors.track,
+          borderRadius: BorderRadius.circular(AppRadiusTokens.tile),
+          border: Border.all(color: tokens.colors.line),
+        ),
+        child: Row(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColorsTokens.amber.withValues(alpha: 0.15),
+                borderRadius: BorderRadius.circular(AppRadiusTokens.tile),
+              ),
+              child: const Icon(LucideIcons.palette, size: 20, color: AppColorsTokens.amber),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Text(
+                        'Custom Brand Theme & Color Derivation',
+                        style: TextStyle(fontSize: 13, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(width: 8),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF7C3AED).withValues(alpha: 0.1),
+                          borderRadius: BorderRadius.circular(AppRadiusTokens.pill),
+                        ),
+                        child: const Text(
+                          'Enterprise',
+                          style: TextStyle(
+                            fontSize: 10,
+                            fontWeight: FontWeight.bold,
+                            color: Color(0xFF7C3AED),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 3),
+                  Text(
+                    'Pick your own primary brand color to derive a completely custom, balanced theme palette across your entire pharmacy.',
+                    style: TextStyle(fontSize: 12, color: tokens.colors.muted),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 12),
+            TextButton(
+              onPressed: () => showPlanUpgradeDialog(context),
+              child: const Text(
+                'Upgrade Plan',
+                style: TextStyle(fontWeight: FontWeight.bold),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
+
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: tokens.colors.track,
+        borderRadius: BorderRadius.circular(AppRadiusTokens.tile),
+        border: Border.all(
+          color: isCustomActive ? tokens.colors.brand1 : tokens.colors.line,
+          width: isCustomActive ? 2 : 1,
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Container(
+                padding: const EdgeInsets.all(8),
+                decoration: BoxDecoration(
+                  color: tokens.colors.brand1.withValues(alpha: 0.15),
+                  borderRadius: BorderRadius.circular(AppRadiusTokens.tile),
+                ),
+                child: Icon(LucideIcons.palette, size: 18, color: tokens.colors.brand1),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Text(
+                          'Custom Brand Theme',
+                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(width: 8),
+                        if (isCustomActive)
+                          const StatusBadge(label: 'Active Theme', variant: StatusBadgeVariant.success),
+                      ],
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'Pick a brand color swatch or enter a hex code to automatically generate your pharmacy theme',
+                      style: TextStyle(fontSize: 12, color: tokens.colors.muted),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+
+          // Quick Swatches
+          Text(
+            'Quick Brand Palette Swatches',
+            style: TextStyle(fontSize: 12, fontWeight: FontWeight.w600, color: tokens.colors.ink),
+          ),
+          const SizedBox(height: 8),
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
+            children: _brandSwatches.map((color) {
+              final isColorSelected = isCustomActive && customColor.toARGB32() == color.toARGB32();
+              return InkWell(
+                onTap: () {
+                  _customHexController.text = '#${color.toARGB32().toRadixString(16).substring(2).toUpperCase()}';
+                  ref.read(customBrandColorProvider.notifier).setCustomBrandColor(color);
+                  ref.read(themePresetProvider.notifier).setThemePreset('custom');
+                },
+                borderRadius: BorderRadius.circular(20),
+                child: Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: color,
+                    shape: BoxShape.circle,
+                    border: Border.all(
+                      color: isColorSelected ? Colors.white : Colors.black12,
+                      width: isColorSelected ? 2.5 : 1,
+                    ),
+                    boxShadow: isColorSelected
+                        ? [
+                            BoxShadow(
+                              color: color.withValues(alpha: 0.4),
+                              blurRadius: 8,
+                              offset: const Offset(0, 2),
+                            )
+                          ]
+                        : null,
+                  ),
+                  child: isColorSelected
+                      ? const Icon(LucideIcons.check, size: 16, color: Colors.white)
+                      : null,
+                ),
+              );
+            }).toList(),
+          ),
+          const SizedBox(height: 16),
+
+          // Hex Color Input Row
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow = constraints.maxWidth < 500;
+              final hexInput = TextFormField(
+                controller: _customHexController,
+                decoration: const InputDecoration(
+                  labelText: 'Custom Brand Hex Code',
+                  hintText: '#0F766E',
+                  prefixIcon: Icon(LucideIcons.hash, size: 16),
+                  contentPadding: EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+                ),
+              );
+
+              final applyBtn = AppButton(
+                text: 'Apply Custom Theme',
+                icon: const Icon(LucideIcons.sparkles, size: 15),
+                onPressed: () {
+                  final parsed = _parseHexColor(_customHexController.text);
+                  if (parsed != null) {
+                    ref.read(customBrandColorProvider.notifier).setCustomBrandColor(parsed);
+                    ref.read(themePresetProvider.notifier).setThemePreset('custom');
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Custom brand theme applied successfully!'),
+                        backgroundColor: AppColorsTokens.success,
+                      ),
+                    );
+                  } else {
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Please enter a valid 6-character hex color (e.g. #0F766E)'),
+                        backgroundColor: AppColorsTokens.danger,
+                      ),
+                    );
+                  }
+                },
+              );
+
+              if (isNarrow) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    hexInput,
+                    const SizedBox(height: 10),
+                    applyBtn,
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(child: hexInput),
+                  const SizedBox(width: 12),
+                  applyBtn,
+                ],
+              );
+            },
+          ),
+        ],
+      ),
     );
   }
 }

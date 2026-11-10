@@ -39,12 +39,20 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     final PharmacyModel? pharmacy = ref.read(currentPharmacyProvider).value;
     final pharmacyDomain = pharmacy?.domain ?? 'pharmacy.com';
 
+    final staffList = ref.read(staffListProvider).value ?? [];
+    final cashiersCount = staffList.where((s) => s.role == UserRole.cashier).length;
+    final storekeepersCount = staffList.where((s) => s.role == UserRole.storekeeper).length;
+
+    final isPro = pharmacy?.isProfessionalPlan ?? false;
+    final isCashierCapped = isPro && cashiersCount >= 3;
+    final isStorekeeperCapped = isPro && storekeepersCount >= 3;
+
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController();
     final usernameController = TextEditingController();
     final phoneController = TextEditingController();
     final passwordController = TextEditingController();
-    UserRole selectedRole = UserRole.cashier;
+    UserRole selectedRole = isCashierCapped ? UserRole.storekeeper : UserRole.cashier;
     String shiftPreset = 'morning';
     String shiftStart = '09:00';
     String shiftEnd = '17:00';
@@ -178,20 +186,35 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
                         v == null || v.length < 6 ? 'Min 6 characters' : null,
                   ),
                   const SizedBox(height: 16),
-                  const Text('Assign Staff Role:',
-                      style:
-                          TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                  Row(
+                    children: [
+                      const Text('Assign Staff Role:',
+                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                      if (pharmacy?.isStandardPlan ?? false)
+                        const Padding(
+                          padding: EdgeInsets.only(left: 6.0),
+                          child: Text('(Standard: 1 staff total)',
+                              style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                        ),
+                      if (isPro)
+                        const Padding(
+                          padding: EdgeInsets.only(left: 6.0),
+                          child: Text('(Pro: 3 Cashiers + 3 Storekeepers)',
+                              style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                        ),
+                    ],
+                  ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: [
                       ChoiceChip(
-                        label: const Text('Cashier'),
+                        label: Text(isCashierCapped ? 'Cashier (Cap 3/3 reached)' : 'Cashier'),
                         selected: selectedRole == UserRole.cashier,
                         selectedColor:
                             AppColorsTokens.info.withValues(alpha: 0.2),
-                        onSelected: isSubmitting
+                        onSelected: isSubmitting || isCashierCapped
                             ? null
                             : (sel) {
                                 if (sel) {
@@ -201,10 +224,10 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
                               },
                       ),
                       ChoiceChip(
-                        label: const Text('Storekeeper'),
+                        label: Text(isStorekeeperCapped ? 'Storekeeper (Cap 3/3 reached)' : 'Storekeeper'),
                         selected: selectedRole == UserRole.storekeeper,
                         selectedColor: AppColorsTokens.mint,
-                        onSelected: isSubmitting
+                        onSelected: isSubmitting || isStorekeeperCapped
                             ? null
                             : (sel) {
                                 if (sel) {
@@ -564,6 +587,9 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
   }
 
   void _showStaffLimitReachedDialog(BuildContext context) {
+    final pharmacy = ref.read(currentPharmacyProvider).value;
+    final isPro = pharmacy?.isProfessionalPlan ?? false;
+
     showDialog(
       context: context,
       builder: (ctx) => AlertDialog(
@@ -576,10 +602,11 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
             Text('Staff Quota Reached'),
           ],
         ),
-        content: const Text(
-          'Your pharmacy is currently on the Standard Plan, which includes up to 2 staff accounts (e.g. 1 Cashier and 1 Storekeeper).\n\n'
-          'To add more staff members with dedicated accounts, upgrade to the Professional or Enterprise Plan.',
-          style: TextStyle(
+        content: Text(
+          isPro
+              ? 'Your pharmacy is currently on the Professional Plan, which includes up to 6 staff members (up to 3 Cashiers and up to 3 Storekeepers).\n\nTo add unlimited cashiers and storekeepers for large pharmacies or pharmacy chains, upgrade to the Enterprise Plan.'
+              : 'Your pharmacy is currently on the Standard Plan, which includes 1 staff member total (1 Cashier OR 1 Storekeeper).\n\nTo add up to 6 staff members (up to 3 Cashiers and up to 3 Storekeepers), upgrade to the Professional Plan.',
+          style: const TextStyle(
               fontSize: 13, height: 1.5, color: Color(0xFF4B6567)),
         ),
         actions: [
@@ -588,7 +615,7 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
             child: const Text('Cancel'),
           ),
           AppButton(
-            text: 'View Plans & Upgrade',
+            text: isPro ? 'Upgrade to Enterprise' : 'Upgrade to Professional',
             onPressed: () {
               Navigator.pop(ctx);
               showPlanUpgradeDialog(context);
@@ -600,6 +627,16 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
   }
 
   void showEditStaffDialog(BuildContext context, ProfileModel staff) {
+    final pharmacy = ref.read(currentPharmacyProvider).value;
+    final staffList = ref.read(staffListProvider).value ?? [];
+    final otherStaff = staffList.where((s) => s.id != staff.id).toList();
+    final cashiersCount = otherStaff.where((s) => s.role == UserRole.cashier).length;
+    final storekeepersCount = otherStaff.where((s) => s.role == UserRole.storekeeper).length;
+
+    final isPro = pharmacy?.isProfessionalPlan ?? false;
+    final isCashierCapped = isPro && cashiersCount >= 3;
+    final isStorekeeperCapped = isPro && storekeepersCount >= 3;
+
     final formKey = GlobalKey<FormState>();
     final nameController = TextEditingController(text: staff.fullName);
     final phoneController = TextEditingController(text: staff.phone ?? '');
@@ -653,36 +690,53 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
                     ),
                   ),
                   const SizedBox(height: 16),
-                  const Text('Role:',
-                      style:
-                          TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                  Row(
+                    children: [
+                      const Text('Role:',
+                          style: TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+                      if (isPro)
+                        const Padding(
+                          padding: EdgeInsets.only(left: 6.0),
+                          child: Text('(Pro limit: 3 Cashiers + 3 Storekeepers)',
+                              style: TextStyle(fontSize: 11, color: Color(0xFF64748B))),
+                        ),
+                    ],
+                  ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     runSpacing: 8,
                     children: [
                       ChoiceChip(
-                        label: const Text('Cashier'),
+                        label: Text(isCashierCapped && staff.role != UserRole.cashier
+                            ? 'Cashier (Cap 3/3 reached)'
+                            : 'Cashier'),
                         selected: selectedRole == UserRole.cashier,
                         selectedColor:
                             AppColorsTokens.info.withValues(alpha: 0.2),
-                        onSelected: (sel) {
-                          if (sel) {
-                            setDialogState(
-                                () => selectedRole = UserRole.cashier);
-                          }
-                        },
+                        onSelected: (isCashierCapped && staff.role != UserRole.cashier)
+                            ? null
+                            : (sel) {
+                                if (sel) {
+                                  setDialogState(
+                                      () => selectedRole = UserRole.cashier);
+                                }
+                              },
                       ),
                       ChoiceChip(
-                        label: const Text('Storekeeper'),
+                        label: Text(isStorekeeperCapped && staff.role != UserRole.storekeeper
+                            ? 'Storekeeper (Cap 3/3 reached)'
+                            : 'Storekeeper'),
                         selected: selectedRole == UserRole.storekeeper,
                         selectedColor: AppColorsTokens.mint,
-                        onSelected: (sel) {
-                          if (sel) {
-                            setDialogState(
-                                () => selectedRole = UserRole.storekeeper);
-                          }
-                        },
+                        onSelected: (isStorekeeperCapped && staff.role != UserRole.storekeeper)
+                            ? null
+                            : (sel) {
+                                if (sel) {
+                                  setDialogState(
+                                      () => selectedRole = UserRole.storekeeper);
+                                }
+                              },
                       ),
                     ],
                   ),
@@ -1052,178 +1106,266 @@ class _StaffScreenState extends ConsumerState<StaffScreen> {
     final staffAsync = ref.watch(staffListProvider);
     final pharmacy = ref.watch(currentPharmacyProvider).value;
     final staffList = staffAsync.value ?? [];
-    final isStaffLimitReached =
-        pharmacy != null && !pharmacy.canAddMoreStaff(staffList.length);
+    final cashiersCount = staffList.where((s) => s.role == UserRole.cashier).length;
+    final storekeepersCount = staffList.where((s) => s.role == UserRole.storekeeper).length;
+    final isStaffLimitReached = pharmacy != null &&
+        !pharmacy.canAddMoreStaff(
+          currentTotalStaff: staffList.length,
+          currentCashiers: cashiersCount,
+          currentStorekeepers: storekeepersCount,
+        );
 
     return SingleChildScrollView(
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          // Plan Quota Banner (for Standard Plan)
-          if (pharmacy != null && pharmacy.isStandardPlan) ...[
-            Container(
-              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-              decoration: BoxDecoration(
-                color: isStaffLimitReached
-                    ? const Color(0xFFFEF2F2)
-                    : const Color(0xFFF0FDF4),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(
-                  color: isStaffLimitReached
-                      ? const Color(0xFFFECACA)
-                      : const Color(0xFFBBF7D0),
-                ),
-              ),
-              child: Row(
-                children: [
-                  Icon(
-                    isStaffLimitReached
-                        ? LucideIcons.alertCircle
-                        : LucideIcons.checkCircle2,
-                    size: 16,
-                    color: isStaffLimitReached
-                        ? AppColorsTokens.danger
-                        : const Color(0xFF16A34A),
-                  ),
-                  const SizedBox(width: 10),
-                  Expanded(
-                    child: Text(
-                      isStaffLimitReached
-                          ? 'Standard Plan staff quota reached (${staffList.length}/2 accounts). Upgrade to Professional for unlimited staff.'
-                          : 'Staff Quota: ${staffList.length}/2 accounts used (Standard Plan)',
-                      style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: isStaffLimitReached
-                            ? const Color(0xFF991B1B)
-                            : const Color(0xFF166534),
+          // Plan Quota Banner
+          if (pharmacy != null) ...[
+            Builder(
+              builder: (context) {
+                if (pharmacy.isStandardPlan) {
+                  final isReached = staffList.isNotEmpty;
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isReached ? const Color(0xFFFEF2F2) : const Color(0xFFF0FDF4),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isReached ? const Color(0xFFFECACA) : const Color(0xFFBBF7D0),
                       ),
                     ),
-                  ),
-                  if (isStaffLimitReached)
-                    TextButton(
-                      onPressed: () => showPlanUpgradeDialog(context),
-                      style: TextButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(
-                            horizontal: 10, vertical: 4),
-                        foregroundColor: AppColorsTokens.danger,
-                        textStyle: const TextStyle(
-                            fontSize: 12, fontWeight: FontWeight.bold),
-                      ),
-                      child: const Text('Upgrade Plan'),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isReached ? LucideIcons.alertCircle : LucideIcons.checkCircle2,
+                          size: 16,
+                          color: isReached ? AppColorsTokens.danger : const Color(0xFF16A34A),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            isReached
+                                ? 'Standard Plan limit reached (1/1 account: 1 Cashier OR 1 Storekeeper). Upgrade to Professional for up to 6 staff (3 Cashiers + 3 Storekeepers).'
+                                : 'Staff Quota: 0/1 account used (Standard Plan: 1 Cashier OR 1 Storekeeper)',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: isReached ? const Color(0xFF991B1B) : const Color(0xFF166534),
+                            ),
+                          ),
+                        ),
+                        if (isReached)
+                          TextButton(
+                            onPressed: () => showPlanUpgradeDialog(context),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              foregroundColor: AppColorsTokens.danger,
+                              textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
+                            child: const Text('Upgrade Plan'),
+                          ),
+                      ],
                     ),
-                ],
-              ),
+                  );
+                } else if (pharmacy.isProfessionalPlan) {
+                  final isReached = staffList.length >= 6;
+                  return Container(
+                    margin: const EdgeInsets.only(bottom: 16),
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+                    decoration: BoxDecoration(
+                      color: isReached ? const Color(0xFFFEF2F2) : const Color(0xFFF0F9FF),
+                      borderRadius: BorderRadius.circular(10),
+                      border: Border.all(
+                        color: isReached ? const Color(0xFFFECACA) : const Color(0xFFBAE6FD),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          isReached ? LucideIcons.alertCircle : LucideIcons.users,
+                          size: 16,
+                          color: isReached ? AppColorsTokens.danger : const Color(0xFF0284C7),
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            isReached
+                                ? 'Professional Plan limit reached (6/6 accounts: 3 Cashiers + 3 Storekeepers). Upgrade to Enterprise for unlimited staff.'
+                                : 'Staff Quota: ${staffList.length}/6 accounts ($cashiersCount/3 Cashiers, $storekeepersCount/3 Storekeepers)',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: isReached ? const Color(0xFF991B1B) : const Color(0xFF0369A1),
+                            ),
+                          ),
+                        ),
+                        if (isReached)
+                          TextButton(
+                            onPressed: () => showPlanUpgradeDialog(context),
+                            style: TextButton.styleFrom(
+                              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                              foregroundColor: AppColorsTokens.brand,
+                              textStyle: const TextStyle(fontSize: 12, fontWeight: FontWeight.bold),
+                            ),
+                            child: const Text('Upgrade to Enterprise'),
+                          ),
+                      ],
+                    ),
+                  );
+                }
+
+                return const SizedBox.shrink();
+              },
             ),
-            const SizedBox(height: 16),
           ],
 
           // Navigation Tabs: Directory vs Shifts & Sales Progress
-          Container(
-            margin: const EdgeInsets.only(bottom: 20),
-            padding: const EdgeInsets.all(4),
-            decoration: BoxDecoration(
-              color: tokens.colors.card,
-              borderRadius: BorderRadius.circular(12),
-              border: Border.all(color: tokens.colors.line),
-            ),
-            child: Row(
-              children: [
-                Expanded(
-                  child: InkWell(
-                    onTap: () => setState(() => _selectedTabIndex = 0),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      decoration: BoxDecoration(
-                        color: _selectedTabIndex == 0 ? AppColorsTokens.brand : Colors.transparent,
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow = constraints.maxWidth < 550;
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 20),
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: tokens.colors.card,
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: tokens.colors.line),
+                ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => setState(() => _selectedTabIndex = 0),
                         borderRadius: BorderRadius.circular(8),
-                      ),
-                      alignment: Alignment.center,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            LucideIcons.users,
-                            size: 16,
-                            color: _selectedTabIndex == 0 ? Colors.white : tokens.colors.muted,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: _selectedTabIndex == 0 ? AppColorsTokens.brand : Colors.transparent,
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Staff Accounts Directory (${staffList.length})',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: _selectedTabIndex == 0 ? Colors.white : tokens.colors.ink,
-                            ),
+                          alignment: Alignment.center,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                LucideIcons.users,
+                                size: 16,
+                                color: _selectedTabIndex == 0 ? Colors.white : tokens.colors.muted,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                isNarrow
+                                    ? 'Directory (${staffList.length})'
+                                    : 'Staff Accounts Directory (${staffList.length})',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: _selectedTabIndex == 0 ? Colors.white : tokens.colors.ink,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ),
-                Expanded(
-                  child: InkWell(
-                    onTap: () => setState(() => _selectedTabIndex = 1),
-                    borderRadius: BorderRadius.circular(8),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(vertical: 10),
-                      decoration: BoxDecoration(
-                        color: _selectedTabIndex == 1 ? AppColorsTokens.brand : Colors.transparent,
+                    Expanded(
+                      child: InkWell(
+                        onTap: () => setState(() => _selectedTabIndex = 1),
                         borderRadius: BorderRadius.circular(8),
-                      ),
-                      alignment: Alignment.center,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Icon(
-                            LucideIcons.wallet,
-                            size: 16,
-                            color: _selectedTabIndex == 1 ? Colors.white : tokens.colors.muted,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(vertical: 10),
+                          decoration: BoxDecoration(
+                            color: _selectedTabIndex == 1 ? AppColorsTokens.brand : Colors.transparent,
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          const SizedBox(width: 8),
-                          Text(
-                            'Cashier Shifts & Sales Progress',
-                            style: TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w700,
-                              color: _selectedTabIndex == 1 ? Colors.white : tokens.colors.ink,
-                            ),
+                          alignment: Alignment.center,
+                          child: Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(
+                                LucideIcons.wallet,
+                                size: 16,
+                                color: _selectedTabIndex == 1 ? Colors.white : tokens.colors.muted,
+                              ),
+                              const SizedBox(width: 8),
+                              Text(
+                                isNarrow
+                                    ? 'Shifts & Sales'
+                                    : 'Cashier Shifts & Sales Progress',
+                                style: TextStyle(
+                                  fontSize: 13,
+                                  fontWeight: FontWeight.w700,
+                                  color: _selectedTabIndex == 1 ? Colors.white : tokens.colors.ink,
+                                ),
+                              ),
+                            ],
                           ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
-              ],
-            ),
+              );
+            },
           ),
 
           if (_selectedTabIndex == 1)
             const CashierShiftsView()
           else ...[
             // Controls Row
-            Row(
-              children: [
-                Expanded(
-                  child: AppSearchField(
-                    controller: _searchController,
-                    maxWidth: double.infinity,
-                    placeholder: 'Search staff name, email, or phone...',
-                    onChanged: (val) =>
-                        setState(() => _searchQuery = val.toLowerCase()),
-                  ),
-                ),
-                const SizedBox(width: 12),
-                AppButton(
-                  text: '+ Add Staff',
-                  icon: const Icon(LucideIcons.userPlus,
-                      size: 16, color: Colors.white),
-                  onPressed: () => isStaffLimitReached
-                      ? _showStaffLimitReachedDialog(context)
-                      : _showAddStaffDialog(context),
-                ),
-              ],
+            LayoutBuilder(
+              builder: (context, constraints) {
+                final isNarrow = constraints.maxWidth < 480;
+
+                if (isNarrow) {
+                  return Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      AppSearchField(
+                        controller: _searchController,
+                        maxWidth: double.infinity,
+                        placeholder: 'Search staff name, email, or phone...',
+                        onChanged: (val) =>
+                            setState(() => _searchQuery = val.toLowerCase()),
+                      ),
+                      const SizedBox(height: 10),
+                      AppButton(
+                        text: '+ Add Staff',
+                        icon: const Icon(LucideIcons.userPlus,
+                            size: 16, color: Colors.white),
+                        onPressed: () => isStaffLimitReached
+                            ? _showStaffLimitReachedDialog(context)
+                            : _showAddStaffDialog(context),
+                      ),
+                    ],
+                  );
+                }
+
+                return Row(
+                  children: [
+                    Expanded(
+                      child: AppSearchField(
+                        controller: _searchController,
+                        maxWidth: double.infinity,
+                        placeholder: 'Search staff name, email, or phone...',
+                        onChanged: (val) =>
+                            setState(() => _searchQuery = val.toLowerCase()),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    AppButton(
+                      text: '+ Add Staff',
+                      icon: const Icon(LucideIcons.userPlus,
+                          size: 16, color: Colors.white),
+                      onPressed: () => isStaffLimitReached
+                          ? _showStaffLimitReachedDialog(context)
+                          : _showAddStaffDialog(context),
+                    ),
+                  ],
+                );
+              },
             ),
             const SizedBox(height: 20),
 

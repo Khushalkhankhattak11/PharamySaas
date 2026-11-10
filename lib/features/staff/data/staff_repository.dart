@@ -271,13 +271,31 @@ class StaffRepository {
       throw Exception('Password must be at least 6 characters');
     }
 
-    // Check plan limits (Standard Plan = max 2 staff)
+    // Check plan limits
     final pharmacy = await _authRepo.getPharmacy(pharmacyId);
-    if (pharmacy != null && pharmacy.isStandardPlan) {
+    if (pharmacy != null) {
       final existingStaff = await getStaff(pharmacyId);
-      if (existingStaff.length >= 2) {
-        throw Exception(
-            'Staff quota reached (2/2 members) on the Standard Plan. Please upgrade to the Professional Plan to add unlimited cashiers and storekeepers.');
+      final cashiersCount = existingStaff.where((s) => s.role == UserRole.cashier).length;
+      final storekeepersCount = existingStaff.where((s) => s.role == UserRole.storekeeper).length;
+
+      if (pharmacy.isStandardPlan) {
+        if (existingStaff.isNotEmpty) {
+          throw Exception(
+              'Staff limit reached (1/1 member) on the Standard Plan. Standard includes 1 Cashier OR 1 Storekeeper. Please upgrade to Professional to add up to 6 staff (3 Cashiers + 3 Storekeepers).');
+        }
+      } else if (pharmacy.isProfessionalPlan) {
+        if (existingStaff.length >= 6) {
+          throw Exception(
+              'Staff limit reached (6/6 members) on the Professional Plan. Please upgrade to Enterprise for unlimited staff accounts.');
+        }
+        if (role == UserRole.cashier && cashiersCount >= 3) {
+          throw Exception(
+              'Cashier quota reached (3/3 Cashiers) on the Professional Plan. You can still add Storekeepers (up to 3), or upgrade to Enterprise for unlimited cashiers.');
+        }
+        if (role == UserRole.storekeeper && storekeepersCount >= 3) {
+          throw Exception(
+              'Storekeeper quota reached (3/3 Storekeepers) on the Professional Plan. You can still add Cashiers (up to 3), or upgrade to Enterprise for unlimited storekeepers.');
+        }
       }
     }
 
@@ -458,6 +476,24 @@ class StaffRepository {
         .doc(staffId)
         .get();
     final pharmacyId = profileDoc.data()?['pharmacy_id'] as String?;
+    final oldRoleStr = profileDoc.data()?['role'] as String?;
+
+    if (pharmacyId != null && oldRoleStr != role.value) {
+      final pharmacy = await _authRepo.getPharmacy(pharmacyId);
+      if (pharmacy != null && pharmacy.isProfessionalPlan) {
+        final existingStaff = await getStaff(pharmacyId);
+        final otherStaff = existingStaff.where((s) => s.id != staffId).toList();
+        final cashiersCount = otherStaff.where((s) => s.role == UserRole.cashier).length;
+        final storekeepersCount = otherStaff.where((s) => s.role == UserRole.storekeeper).length;
+
+        if (role == UserRole.cashier && cashiersCount >= 3) {
+          throw Exception('Cannot change role: Professional Plan allows a maximum of 3 Cashiers (3/3 reached). Upgrade to Enterprise for unlimited cashiers.');
+        }
+        if (role == UserRole.storekeeper && storekeepersCount >= 3) {
+          throw Exception('Cannot change role: Professional Plan allows a maximum of 3 Storekeepers (3/3 reached). Upgrade to Enterprise for unlimited storekeepers.');
+        }
+      }
+    }
 
     final cleanShiftStart = (shiftStart != null && shiftStart.trim().isNotEmpty) ? shiftStart.trim() : null;
     final cleanShiftEnd = (shiftEnd != null && shiftEnd.trim().isNotEmpty) ? shiftEnd.trim() : null;

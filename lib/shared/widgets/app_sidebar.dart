@@ -38,9 +38,11 @@ class AppSidebar extends ConsumerWidget {
   List<NavItemData> _getNavItems() {
     if (role.isSuperAdmin) {
       return const [
-        NavItemData(title: 'Overview', icon: LucideIcons.layoutDashboard, route: '/super-admin', group: 'Platform'),
+        NavItemData(title: 'Dashboard', icon: LucideIcons.layoutDashboard, route: '/super-admin', group: 'Platform'),
         NavItemData(title: 'Pending approvals', icon: LucideIcons.checkSquare, route: '/super-admin/approvals', group: 'Platform'),
         NavItemData(title: 'All pharmacies', icon: LucideIcons.building, route: '/super-admin/pharmacies', group: 'Platform'),
+        NavItemData(title: 'Notifications', icon: LucideIcons.bell, route: '/notifications', group: 'System'),
+        NavItemData(title: 'Settings', icon: LucideIcons.settings, route: '/settings', group: 'System'),
       ];
     }
 
@@ -50,7 +52,7 @@ class AppSidebar extends ConsumerWidget {
         NavItemData(title: 'Purchases', icon: LucideIcons.shoppingCart, route: '/purchases', group: 'Inventory'),
         NavItemData(title: 'Suppliers', icon: LucideIcons.truck, route: '/suppliers', group: 'Inventory'),
         NavItemData(title: 'QR labels', icon: LucideIcons.qrCode, route: '/qr-setup', group: 'Inventory'),
-        NavItemData(title: 'Inventory Reports', icon: LucideIcons.barChart2, route: '/reports', group: 'Inventory'),
+        NavItemData(title: 'Reports', icon: LucideIcons.barChart2, route: '/reports', group: 'Inventory'),
         NavItemData(title: 'Notifications', icon: LucideIcons.bell, route: '/notifications', group: 'System'),
         NavItemData(title: 'Settings', icon: LucideIcons.settings, route: '/settings', group: 'System'),
       ];
@@ -58,9 +60,9 @@ class AppSidebar extends ConsumerWidget {
 
     if (role.isCashier) {
       return const [
-        NavItemData(title: 'POS Billing', icon: LucideIcons.calculator, route: '/pos', group: 'Selling'),
-        NavItemData(title: 'Sales history', icon: LucideIcons.receipt, route: '/sales-history', group: 'Selling'),
-        NavItemData(title: 'View Inventory', icon: LucideIcons.package, route: '/inventory', group: 'Inventory'),
+        NavItemData(title: 'Point of sale', icon: LucideIcons.calculator, route: '/pos', group: 'Main menu'),
+        NavItemData(title: 'Sales history', icon: LucideIcons.receipt, route: '/sales-history', group: 'Main menu'),
+        NavItemData(title: 'Medicines', icon: LucideIcons.package, route: '/inventory', group: 'Inventory'),
         NavItemData(title: 'Medicine lookup', icon: LucideIcons.search, route: '/medicine-lookup', group: 'Inventory'),
         NavItemData(title: 'Notifications', icon: LucideIcons.bell, route: '/notifications', group: 'System'),
         NavItemData(title: 'Settings', icon: LucideIcons.settings, route: '/settings', group: 'System'),
@@ -70,12 +72,12 @@ class AppSidebar extends ConsumerWidget {
     // Admin (Pharmacy Owner)
     return const [
       NavItemData(title: 'Dashboard', icon: LucideIcons.layoutDashboard, route: '/dashboard', group: 'Main menu'),
-      NavItemData(title: 'POS Billing', icon: LucideIcons.calculator, route: '/pos', group: 'Main menu'),
+      NavItemData(title: 'Point of sale', icon: LucideIcons.calculator, route: '/pos', group: 'Main menu'),
       NavItemData(title: 'Sales history', icon: LucideIcons.receipt, route: '/sales-history', group: 'Main menu'),
-      NavItemData(title: 'Inventory', icon: LucideIcons.package, route: '/inventory', group: 'Inventory'),
+      NavItemData(title: 'Medicines', icon: LucideIcons.package, route: '/inventory', group: 'Inventory'),
+      NavItemData(title: 'QR labels', icon: LucideIcons.qrCode, route: '/qr-setup', group: 'Inventory'),
       NavItemData(title: 'Purchases', icon: LucideIcons.shoppingCart, route: '/purchases', group: 'Inventory'),
       NavItemData(title: 'Suppliers', icon: LucideIcons.truck, route: '/suppliers', group: 'Inventory'),
-      NavItemData(title: 'QR labels', icon: LucideIcons.qrCode, route: '/qr-setup', group: 'Inventory'),
       NavItemData(title: 'Reports', icon: LucideIcons.barChart2, route: '/reports', group: 'Admin'),
       NavItemData(title: 'Staff', icon: LucideIcons.users, route: '/staff', group: 'Admin'),
       NavItemData(title: 'Settings', icon: LucideIcons.settings, route: '/settings', group: 'Admin'),
@@ -86,7 +88,7 @@ class AppSidebar extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final tokens = context.tokens;
     final navItems = _getNavItems();
-    final width = isCollapsed ? 80.0 : 264.0;
+    final width = isCollapsed ? 80.0 : 260.0;
 
     return Container(
       width: width,
@@ -99,7 +101,7 @@ class AppSidebar extends ConsumerWidget {
         crossAxisAlignment:
             isCollapsed ? CrossAxisAlignment.center : CrossAxisAlignment.start,
         children: [
-          // Logo row: 42x42 mark, radius 14, 135deg gradient #0F766E -> #064E4B, white bold "+" (22px)
+          // Logo row (padding 0 8 18): 42x42 mark, radius 14, gradient 135deg brand1 -> brand2, white bold "+" 22px, shadow 0 8 18 brand1 at 40%. Right of it "PharmaCore" 17/800 and "Smart pharmacy management" 12 muted.
           Padding(
             padding: EdgeInsets.only(bottom: 18, left: isCollapsed ? 0 : 8),
             child: Row(
@@ -109,17 +111,27 @@ class AppSidebar extends ConsumerWidget {
                   width: 42,
                   height: 42,
                   decoration: BoxDecoration(
-                    gradient: AppColorsTokens.brandGradient,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [tokens.colors.brand1, tokens.colors.brand2],
+                    ),
                     borderRadius: BorderRadius.circular(AppRadiusTokens.logoMark),
-                    boxShadow: const [AppColorsTokens.logoMarkShadow],
+                    boxShadow: [
+                      BoxShadow(
+                        color: tokens.colors.brand1.withValues(alpha: 0.40),
+                        blurRadius: 18,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
                   alignment: Alignment.center,
                   child: const Text(
                     '+',
                     style: TextStyle(
                       color: Colors.white,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w900,
+                      fontSize: 22,
+                      fontWeight: FontWeight.w800,
                       height: 1.0,
                     ),
                   ),
@@ -143,7 +155,7 @@ class AppSidebar extends ConsumerWidget {
                         Text(
                           role.isSuperAdmin ? 'Super Admin Portal' : 'Smart pharmacy management',
                           style: TextStyle(
-                            fontSize: 11,
+                            fontSize: 12,
                             fontWeight: FontWeight.w500,
                             color: tokens.colors.muted,
                           ),
@@ -346,6 +358,16 @@ class _NavTileState extends State<_NavTile> {
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
+    final activeGradient = LinearGradient(
+      begin: Alignment.topLeft,
+      end: Alignment.bottomRight,
+      colors: [tokens.colors.brand1, tokens.colors.brand2],
+    );
+    final activeShadow = BoxShadow(
+      color: tokens.colors.brand1.withValues(alpha: 0.35),
+      blurRadius: 18,
+      offset: const Offset(0, 8),
+    );
 
     if (widget.isCollapsed) {
       return Tooltip(
@@ -357,12 +379,12 @@ class _NavTileState extends State<_NavTile> {
             width: 48,
             height: 48,
             decoration: BoxDecoration(
-              gradient: widget.isActive ? AppColorsTokens.activePillGradient : null,
+              gradient: widget.isActive ? activeGradient : null,
               color: widget.isActive
                   ? null
                   : (_isHovered ? tokens.colors.track : Colors.transparent),
               borderRadius: BorderRadius.circular(AppRadiusTokens.pill),
-              boxShadow: widget.isActive ? [AppColorsTokens.activeItemShadow] : null,
+              boxShadow: widget.isActive ? [activeShadow] : null,
             ),
             child: Center(
               child: Icon(
@@ -389,23 +411,23 @@ class _NavTileState extends State<_NavTile> {
             height: 48,
             padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
             decoration: BoxDecoration(
-              gradient: widget.isActive ? AppColorsTokens.activePillGradient : null,
+              gradient: widget.isActive ? activeGradient : null,
               color: widget.isActive
                   ? null
                   : (_isHovered ? tokens.colors.track : Colors.transparent),
               borderRadius: BorderRadius.circular(AppRadiusTokens.pill),
-              boxShadow: widget.isActive ? [AppColorsTokens.activeItemShadow] : null,
+              boxShadow: widget.isActive ? [activeShadow] : null,
             ),
             child: Row(
               children: [
-                // 30px circular icon holder
+                // 30px circular icon holder (track color, rgba(255,255,255,0.20) when active)
                 Container(
                   width: 30,
                   height: 30,
                   decoration: BoxDecoration(
                     shape: BoxShape.circle,
                     color: widget.isActive
-                        ? Colors.white.withValues(alpha: 0.18)
+                        ? Colors.white.withValues(alpha: 0.20)
                         : tokens.colors.track,
                   ),
                   child: Icon(

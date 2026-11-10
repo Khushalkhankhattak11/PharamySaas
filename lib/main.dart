@@ -7,6 +7,7 @@ import 'core/env/env.dart';
 import 'core/router/app_router.dart';
 import 'core/theme/app_theme.dart';
 import 'core/theme/theme_controller.dart';
+import 'core/theme/tokens.dart';
 import 'firebase_options.dart';
 
 void main() async {
@@ -47,12 +48,17 @@ class PharmaCareApp extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final router = ref.watch(appRouterProvider);
     final themeMode = ref.watch(themeModeProvider);
+    final presetId = ref.watch(themePresetProvider);
+    final customColor = ref.watch(customBrandColorProvider);
+
+    final lightTokens = AppColorsTokens.getById(presetId, isDark: false, customColor: customColor);
+    final darkTokens = AppColorsTokens.getById(presetId, isDark: true, customColor: customColor);
 
     return MaterialApp.router(
       title: Env.appName,
       debugShowCheckedModeBanner: false,
-      theme: AppTheme.lightTheme,
-      darkTheme: AppTheme.darkTheme,
+      theme: AppTheme.buildTheme(lightTokens, isDark: false),
+      darkTheme: AppTheme.buildTheme(darkTokens, isDark: true),
       themeMode: themeMode,
       routerConfig: router,
     );

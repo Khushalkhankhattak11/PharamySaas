@@ -287,23 +287,27 @@ class SuperAdminDashboardScreen extends ConsumerWidget {
       child: pendingList,
     );
 
-    if (screenWidth < 1100) {
-      return Column(
-        children: [
-          donut,
-          const SizedBox(height: 20),
-          approvalsCard,
-        ],
-      );
-    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 900) {
+          return Column(
+            children: [
+              donut,
+              const SizedBox(height: 20),
+              approvalsCard,
+            ],
+          );
+        }
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(flex: 10, child: donut),
-        const SizedBox(width: 16),
-        Expanded(flex: 16, child: approvalsCard),
-      ],
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(flex: 10, child: donut),
+            const SizedBox(width: 16),
+            Expanded(flex: 16, child: approvalsCard),
+          ],
+        );
+      },
     );
   }
 }

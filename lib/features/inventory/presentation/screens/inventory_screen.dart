@@ -112,32 +112,75 @@ class _InventoryScreenState extends ConsumerState<InventoryScreen> {
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
         // Controls Row: Search + Scan + Add Button
-        Row(
-          children: [
-            Expanded(
-              child: AppSearchField(
-                controller: _searchController,
-                maxWidth: double.infinity,
-                placeholder: 'Search by name, generic, barcode or QR...',
-                onChanged: (val) {
-                  ref.read(inventorySearchProvider.notifier).state = val;
-                },
-              ),
-            ),
-            const SizedBox(width: 10),
-            AppButton.white(
-              text: 'Scan',
-              icon: const Icon(LucideIcons.scanLine, size: 16),
-              onPressed: _handleScan,
-            ),
-            if (canAddMedicine) ...[
-              const SizedBox(width: 10),
-              AppButton(
-                text: '+ Add Medicine',
-                onPressed: () => context.push('/inventory/add'),
-              ),
-            ],
-          ],
+        LayoutBuilder(
+          builder: (context, constraints) {
+            final isNarrow = constraints.maxWidth < 540;
+
+            if (isNarrow) {
+              return Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  AppSearchField(
+                    controller: _searchController,
+                    maxWidth: double.infinity,
+                    placeholder: 'Search by name, generic, barcode or QR...',
+                    onChanged: (val) {
+                      ref.read(inventorySearchProvider.notifier).state = val;
+                    },
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: AppButton.white(
+                          text: 'Scan Barcode',
+                          icon: const Icon(LucideIcons.scanLine, size: 16),
+                          onPressed: _handleScan,
+                        ),
+                      ),
+                      if (canAddMedicine) ...[
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: AppButton(
+                            text: '+ Add Medicine',
+                            onPressed: () => context.push('/inventory/add'),
+                          ),
+                        ),
+                      ],
+                    ],
+                  ),
+                ],
+              );
+            }
+
+            return Row(
+              children: [
+                Expanded(
+                  child: AppSearchField(
+                    controller: _searchController,
+                    maxWidth: double.infinity,
+                    placeholder: 'Search by name, generic, barcode or QR...',
+                    onChanged: (val) {
+                      ref.read(inventorySearchProvider.notifier).state = val;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 10),
+                AppButton.white(
+                  text: 'Scan',
+                  icon: const Icon(LucideIcons.scanLine, size: 16),
+                  onPressed: _handleScan,
+                ),
+                if (canAddMedicine) ...[
+                  const SizedBox(width: 10),
+                  AppButton(
+                    text: '+ Add Medicine',
+                    onPressed: () => context.push('/inventory/add'),
+                  ),
+                ],
+              ],
+            );
+          },
         ),
         const SizedBox(height: 16),
 

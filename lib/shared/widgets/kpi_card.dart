@@ -32,7 +32,7 @@ class SparklinePainter extends CustomPainter {
 
     for (int i = 0; i < data.length; i++) {
       final x = i * stepX;
-      // Invert Y so highest value is at top with 2px padding
+      // Invert Y with 2px padding
       final normalized = (data[i] - minVal) / range;
       final y = size.height - (normalized * (size.height - 4) + 2);
 
@@ -94,19 +94,19 @@ class KpiCard extends StatelessWidget {
     required this.sparklineData,
     this.onTap,
   })  : isPastel = true,
-        accentColor = const Color(0xFF05343A),
-        badgeTextColor = const Color(0xFF06292B);
+        accentColor = Colors.transparent,
+        badgeTextColor = null;
 
   @override
   Widget build(BuildContext context) {
     final tokens = context.tokens;
 
-    // Pastel variant styling
+    // (b) Pastel Variant: full pastel fill, no top border, text onPastel, label at 75% opacity,
+    // icon square and trend badge filled with the card color, sparkline in onPastel.
     if (isPastel) {
-      final bgColor = pastelColor ?? AppColorsTokens.lime;
-      const textColor = Color(0xFF06292B);
-      const labelColor = Color(0xFF2F4B4D);
-      const sparklineColor = Color(0xFF05343A);
+      final fillColor = pastelColor ?? tokens.colors.pastel1;
+      final onPastelColor = tokens.colors.onPastel;
+      final labelColor = onPastelColor.withValues(alpha: 0.75);
 
       return Material(
         color: Colors.transparent,
@@ -114,30 +114,30 @@ class KpiCard extends StatelessWidget {
           onTap: onTap,
           borderRadius: BorderRadius.circular(AppRadiusTokens.kpiCard),
           child: Container(
-            padding: const EdgeInsets.all(16),
             decoration: BoxDecoration(
-              color: bgColor,
+              color: fillColor,
               borderRadius: BorderRadius.circular(AppRadiusTokens.kpiCard),
               boxShadow: [tokens.colors.shadow],
             ),
+            padding: const EdgeInsets.all(16),
             child: Stack(
               children: [
-                // Top-right trend badge
+                // Trend badge pinned top right
                 Positioned(
                   top: 0,
                   right: 0,
                   child: Container(
                     padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                     decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.7),
+                      color: tokens.colors.card,
                       borderRadius: BorderRadius.circular(AppRadiusTokens.pill),
                     ),
                     child: Text(
                       badgeText,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
-                        color: textColor,
+                        color: onPastelColor,
                         fontFeatures: AppTypographyTokens.tabularFigures,
                       ),
                     ),
@@ -147,35 +147,36 @@ class KpiCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    // Icon square
+                    // 38px Icon square
                     Container(
                       width: 38,
                       height: 38,
                       decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(AppRadiusTokens.iconSquare),
+                        color: tokens.colors.card,
+                        borderRadius: BorderRadius.circular(AppRadiusTokens.square),
                       ),
-                      child: Icon(icon, size: 20, color: sparklineColor),
+                      child: Icon(icon, size: 20, color: onPastelColor),
                     ),
-                    const SizedBox(height: 12),
-                    Text(
-                      label,
-                      style: const TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: labelColor,
+                    Container(
+                      margin: const EdgeInsets.only(top: 12, bottom: 2),
+                      child: Text(
+                        label,
+                        style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: labelColor,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
                     ),
-                    const SizedBox(height: 2),
                     Text(
                       value,
-                      style: const TextStyle(
+                      style: TextStyle(
                         fontSize: 24,
                         fontWeight: FontWeight.w800,
                         letterSpacing: -0.02 * 24,
-                        color: textColor,
+                        color: onPastelColor,
                         fontFeatures: AppTypographyTokens.tabularFigures,
                       ),
                     ),
@@ -186,7 +187,7 @@ class KpiCard extends StatelessWidget {
                       child: CustomPaint(
                         painter: SparklinePainter(
                           data: sparklineData,
-                          color: sparklineColor,
+                          color: onPastelColor,
                         ),
                       ),
                     ),
@@ -199,7 +200,9 @@ class KpiCard extends StatelessWidget {
       );
     }
 
-    // Default tinted card with 4px top accent
+    // (a) Tinted Variant: card with 4px top border in its color, 38px icon square (radius 12, color at 18%),
+    // trend badge pinned top 16 right 14 (11/700, pill, color at 16%), label 12/600 muted (margin 12 0 2),
+    // value 24/800, sparkline 34px high (7 points, stroke 2.2, round caps, no axes).
     return Material(
       color: Colors.transparent,
       child: InkWell(
@@ -216,7 +219,7 @@ class KpiCard extends StatelessWidget {
             borderRadius: BorderRadius.circular(AppRadiusTokens.kpiCard),
             child: Stack(
               children: [
-                // 4px top accent
+                // 4px top border
                 Positioned(
                   top: 0,
                   left: 0,
@@ -224,56 +227,65 @@ class KpiCard extends StatelessWidget {
                   height: 4,
                   child: Container(color: accentColor),
                 ),
+                // Trend badge pinned top 16, right 14
+                Positioned(
+                  top: 16,
+                  right: 14,
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                    decoration: BoxDecoration(
+                      color: accentColor.withValues(alpha: 0.16),
+                      borderRadius: BorderRadius.circular(AppRadiusTokens.pill),
+                    ),
+                    child: Text(
+                      badgeText,
+                      style: TextStyle(
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        color: badgeTextColor ?? accentColor,
+                        fontFeatures: AppTypographyTokens.tabularFigures,
+                      ),
+                    ),
+                  ),
+                ),
                 Padding(
                   padding: const EdgeInsets.fromLTRB(16, 16, 16, 16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          // 38x38 icon square
-                          Container(
-                            width: 38,
-                            height: 38,
-                            decoration: BoxDecoration(
-                              color: accentColor.withValues(alpha: 0.16),
-                              borderRadius: BorderRadius.circular(AppRadiusTokens.iconSquare),
-                            ),
-                            child: Icon(icon, size: 20, color: accentColor),
-                          ),
-                          // Top-right trend badge
-                          Container(
-                            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                            decoration: BoxDecoration(
-                              color: accentColor.withValues(alpha: 0.15),
-                              borderRadius: BorderRadius.circular(AppRadiusTokens.pill),
-                            ),
-                            child: Text(
-                              badgeText,
-                              style: TextStyle(
-                                fontSize: 11,
-                                fontWeight: FontWeight.w700,
-                                color: badgeTextColor ?? accentColor,
-                                fontFeatures: AppTypographyTokens.tabularFigures,
-                              ),
-                            ),
-                          ),
-                        ],
+                      // 38px icon square (radius 12, color at 18%)
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: accentColor.withValues(alpha: 0.18),
+                          borderRadius: BorderRadius.circular(AppRadiusTokens.square),
+                        ),
+                        child: Icon(icon, size: 20, color: accentColor),
                       ),
-                      const SizedBox(height: 12),
-                      Text(
-                        label,
-                        style: tokens.typography.kpiLabel,
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      Container(
+                        margin: const EdgeInsets.only(top: 12, bottom: 2),
+                        child: Text(
+                          label,
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                            color: tokens.colors.muted,
+                          ),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
                       ),
-                      const SizedBox(height: 2),
                       Text(
                         value,
-                        style: tokens.typography.kpiValue,
+                        style: TextStyle(
+                          fontSize: 24,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: -0.02 * 24,
+                          color: tokens.colors.ink,
+                          fontFeatures: AppTypographyTokens.tabularFigures,
+                        ),
                       ),
                       const SizedBox(height: 8),
                       SizedBox(
@@ -297,4 +309,3 @@ class KpiCard extends StatelessWidget {
     );
   }
 }
-

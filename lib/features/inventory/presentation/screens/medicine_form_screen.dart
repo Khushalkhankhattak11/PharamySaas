@@ -1006,56 +1006,89 @@ class _MedicineFormScreenState extends ConsumerState<MedicineFormScreen> {
             borderRadius: BorderRadius.circular(AppRadiusTokens.largeCard),
             border: Border.all(color: AppColorsTokens.brand.withValues(alpha: 0.3)),
           ),
-          child: Row(
-            children: [
-              Container(
-                padding: const EdgeInsets.all(10),
-                decoration: BoxDecoration(
-                  gradient: AppColorsTokens.brandGradient,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: const Icon(LucideIcons.sparkles, color: Colors.white, size: 20),
-              ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    const Text(
-                      'Pakistan Pharmaceutical Master Catalog',
-                      style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+          child: LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow = constraints.maxWidth < 650;
+
+              final infoColumn = Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'Pakistan Pharmaceutical Master Catalog',
+                    style: TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    'Click "+ Add" on any medicine card below to add to your Firebase inventory, or use 1-Click Import to add all ${allDisplayTemplates.length} common medicines to Firebase Products & POS at once.',
+                    style: TextStyle(fontSize: 12, color: tokens.colors.muted),
+                  ),
+                  if (_isBatchImporting) ...[
+                    const SizedBox(height: 8),
+                    LinearProgressIndicator(
+                      value: _batchImportTotal > 0 ? (_batchImportProgress / _batchImportTotal) : null,
+                      color: AppColorsTokens.brand,
+                      backgroundColor: tokens.colors.line,
                     ),
-                    const SizedBox(height: 2),
+                    const SizedBox(height: 4),
                     Text(
-                      'Click "+ Add" on any medicine card below to add to your Firebase inventory, or use 1-Click Import to add all ${allDisplayTemplates.length} common medicines to Firebase Products & POS at once.',
-                      style: TextStyle(fontSize: 12, color: tokens.colors.muted),
+                      'Saving medicines to Firebase... ($_batchImportProgress / $_batchImportTotal)',
+                      style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColorsTokens.brand),
                     ),
-                    if (_isBatchImporting) ...[
-                      const SizedBox(height: 8),
-                      LinearProgressIndicator(
-                        value: _batchImportTotal > 0 ? (_batchImportProgress / _batchImportTotal) : null,
-                        color: AppColorsTokens.brand,
-                        backgroundColor: tokens.colors.line,
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        'Saving medicines to Firebase... ($_batchImportProgress / $_batchImportTotal)',
-                        style: const TextStyle(fontSize: 11, fontWeight: FontWeight.bold, color: AppColorsTokens.brand),
-                      ),
-                    ],
                   ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              AppButton(
+                ],
+              );
+
+              final importButton = AppButton(
                 text: _isBatchImporting
                     ? 'Saving...'
                     : '⚡ 1-Click Import All (${filtered.length})',
                 isLoading: _isBatchImporting,
                 icon: const Icon(LucideIcons.downloadCloud, size: 16, color: Colors.white),
                 onPressed: _isBatchImporting ? null : () => _handleBatchImportAll(filtered),
-              ),
-            ],
+              );
+
+              if (isNarrow) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(10),
+                          decoration: BoxDecoration(
+                            gradient: AppColorsTokens.brandGradient,
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          child: const Icon(LucideIcons.sparkles, color: Colors.white, size: 20),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(child: infoColumn),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    importButton,
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Container(
+                    padding: const EdgeInsets.all(10),
+                    decoration: BoxDecoration(
+                      gradient: AppColorsTokens.brandGradient,
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: const Icon(LucideIcons.sparkles, color: Colors.white, size: 20),
+                  ),
+                  const SizedBox(width: 14),
+                  Expanded(child: infoColumn),
+                  const SizedBox(width: 12),
+                  importButton,
+                ],
+              );
+            },
           ),
         ),
         const SizedBox(height: 14),

@@ -76,9 +76,11 @@ class AppScaffold extends ConsumerWidget {
                     Expanded(
                       child: SingleChildScrollView(
                         key: ValueKey(location),
-                        padding: EdgeInsets.symmetric(
-                          horizontal: isDesktop ? 28 : 16,
-                          vertical: 16,
+                        padding: EdgeInsetsDirectional.fromSTEB(
+                          isDesktop ? 28 : 16,
+                          24,
+                          isDesktop ? 28 : 16,
+                          40,
                         ),
                         child: Center(
                           child: ConstrainedBox(
@@ -104,77 +106,7 @@ class AppScaffold extends ConsumerWidget {
     final tokens = context.tokens;
 
     if (role.isSuperAdmin || location.startsWith('/super-admin')) {
-      if (role.isCashier) {
       return Container(
-        decoration: BoxDecoration(
-          color: tokens.colors.card,
-          border: Border(top: BorderSide(color: tokens.colors.line, width: 1)),
-          boxShadow: [tokens.colors.shadow],
-        ),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: SafeArea(
-          child: Row(
-            mainAxisAlignment: MainAxisAlignment.spaceAround,
-            children: [
-              _PhoneNavItem(
-                icon: LucideIcons.search,
-                label: 'Medicines',
-                isActive: location.startsWith('/medicine-lookup'),
-                onTap: () => context.go('/medicine-lookup'),
-              ),
-              _PhoneNavItem(
-                icon: LucideIcons.receipt,
-                label: 'My Sales',
-                isActive: location.startsWith('/sales-history'),
-                onTap: () => context.go('/sales-history'),
-              ),
-
-              // CENTER HIGHLIGHTED POS (Selling)
-              GestureDetector(
-                onTap: () => context.go('/pos'),
-                child: Container(
-                  width: 54,
-                  height: 54,
-                  decoration: const BoxDecoration(
-                    gradient: AppColorsTokens.brandGradient,
-                    shape: BoxShape.circle,
-                    boxShadow: [
-                      BoxShadow(
-                        color: Color(0x660F766E),
-                        blurRadius: 14,
-                        offset: Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: const Center(
-                    child: Icon(
-                      LucideIcons.calculator,
-                      color: Colors.white,
-                      size: 24,
-                    ),
-                  ),
-                ),
-              ),
-
-              _PhoneNavItem(
-                icon: LucideIcons.bell,
-                label: 'Alerts',
-                isActive: location.startsWith('/notifications'),
-                onTap: () => context.go('/notifications'),
-              ),
-              _PhoneNavItem(
-                icon: LucideIcons.logOut,
-                label: 'Sign Out',
-                isActive: false,
-                onTap: () => _confirmSignOut(context, ref),
-              ),
-            ],
-          ),
-        ),
-      );
-    }
-
-    return Container(
         decoration: BoxDecoration(
           color: tokens.colors.card,
           border: Border(top: BorderSide(color: tokens.colors.line, width: 1)),

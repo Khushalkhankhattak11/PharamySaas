@@ -3,10 +3,11 @@ import '../../core/theme/tokens.dart';
 
 enum StatusBadgeVariant {
   success,
+  info,
   amber,
   orange,
   danger,
-  info,
+  purple,
   neutral,
   custom,
 }
@@ -40,47 +41,42 @@ class StatusBadge extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Color textColor;
-    Color bgColor;
+    Color baseColor;
 
     switch (variant) {
       case StatusBadgeVariant.success:
-        textColor = AppColorsTokens.trendGreenText;
-        bgColor = AppColorsTokens.success.withValues(alpha: 0.15);
-        break;
-      case StatusBadgeVariant.amber:
-        textColor = AppColorsTokens.amberText;
-        bgColor = AppColorsTokens.amber.withValues(alpha: 0.15);
-        break;
-      case StatusBadgeVariant.orange:
-        textColor = AppColorsTokens.orangeText;
-        bgColor = AppColorsTokens.orange.withValues(alpha: 0.15);
-        break;
-      case StatusBadgeVariant.danger:
-        textColor = AppColorsTokens.danger;
-        bgColor = AppColorsTokens.danger.withValues(alpha: 0.15);
+        baseColor = AppColorsTokens.success; // #22C55E
         break;
       case StatusBadgeVariant.info:
-        textColor = AppColorsTokens.info;
-        bgColor = AppColorsTokens.info.withValues(alpha: 0.15);
+        baseColor = AppColorsTokens.info; // #3B82F6
+        break;
+      case StatusBadgeVariant.amber:
+        baseColor = AppColorsTokens.amber; // #F59E0B
+        break;
+      case StatusBadgeVariant.orange:
+        baseColor = AppColorsTokens.orange; // #F97316
+        break;
+      case StatusBadgeVariant.danger:
+        baseColor = AppColorsTokens.danger; // #EF4444
+        break;
+      case StatusBadgeVariant.purple:
+        baseColor = AppColorsTokens.purple; // #A855F7
         break;
       case StatusBadgeVariant.neutral:
-        textColor = AppColorsTokens.light.muted;
-        bgColor = AppColorsTokens.light.track;
+        baseColor = AppColorsTokens.light.muted;
         break;
       case StatusBadgeVariant.custom:
-        textColor = customTextColor ?? AppColorsTokens.light.ink;
-        bgColor = customBgColor ?? AppColorsTokens.light.track;
+        baseColor = customTextColor ?? AppColorsTokens.light.ink;
         break;
     }
 
-    if (customTextColor != null) textColor = customTextColor!;
-    if (customBgColor != null) bgColor = customBgColor!;
+    final textColor = customTextColor ?? baseColor;
+    final bgColor = customBgColor ?? baseColor.withValues(alpha: 0.16);
 
     return Container(
       padding: EdgeInsets.symmetric(
         horizontal: isTrend ? 8 : 10,
-        vertical: isTrend ? 4 : 5,
+        vertical: isTrend ? 3 : 4,
       ),
       decoration: BoxDecoration(
         color: bgColor,
@@ -109,4 +105,3 @@ class StatusBadge extends StatelessWidget {
     );
   }
 }
-

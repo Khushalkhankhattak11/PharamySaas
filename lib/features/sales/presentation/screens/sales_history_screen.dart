@@ -221,29 +221,55 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
 
               return Padding(
                 padding: const EdgeInsets.only(bottom: 16.0),
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: MetricTile(
-                        label: isCashier ? 'My Invoices Today' : "Today's Invoices",
-                        value: '$todayCount receipts',
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: MetricTile(
-                        label: isCashier ? 'My Sales Volume Today' : "Today's Revenue",
-                        value: '$currency ${todayVol.toStringAsFixed(0)}',
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: MetricTile(
-                        label: 'Average Receipt Value',
-                        value: '$currency ${avgTicket.toStringAsFixed(0)}',
-                      ),
-                    ),
-                  ],
+                child: LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isNarrow = constraints.maxWidth < 600;
+                    if (isNarrow) {
+                      return Column(
+                        children: [
+                          MetricTile(
+                            label: isCashier ? 'My Invoices Today' : "Today's Invoices",
+                            value: '$todayCount receipts',
+                          ),
+                          const SizedBox(height: 10),
+                          MetricTile(
+                            label: isCashier ? 'My Sales Volume Today' : "Today's Revenue",
+                            value: '$currency ${todayVol.toStringAsFixed(0)}',
+                          ),
+                          const SizedBox(height: 10),
+                          MetricTile(
+                            label: 'Average Receipt Value',
+                            value: '$currency ${avgTicket.toStringAsFixed(0)}',
+                          ),
+                        ],
+                      );
+                    }
+
+                    return Row(
+                      children: [
+                        Expanded(
+                          child: MetricTile(
+                            label: isCashier ? 'My Invoices Today' : "Today's Invoices",
+                            value: '$todayCount receipts',
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: MetricTile(
+                            label: isCashier ? 'My Sales Volume Today' : "Today's Revenue",
+                            value: '$currency ${todayVol.toStringAsFixed(0)}',
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: MetricTile(
+                            label: 'Average Receipt Value',
+                            value: '$currency ${avgTicket.toStringAsFixed(0)}',
+                          ),
+                        ),
+                      ],
+                    );
+                  },
                 ),
               );
             },
@@ -251,25 +277,53 @@ class _SalesHistoryScreenState extends ConsumerState<SalesHistoryScreen> {
           ),
 
           // Controls Row: Search + QR Scan
-          Row(
-            children: [
-              Expanded(
-                child: AppSearchField(
-                  controller: _searchController,
-                  maxWidth: double.infinity,
-                  placeholder: 'Search invoice #, customer name, cashier...',
-                  onChanged: (val) {
-                    ref.read(salesSearchQueryProvider.notifier).state = val;
-                  },
-                ),
-              ),
-              const SizedBox(width: 10),
-              AppButton.white(
-                text: 'Scan Receipt QR',
-                icon: const Icon(LucideIcons.qrCode, size: 16),
-                onPressed: _scanInvoiceQr,
-              ),
-            ],
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow = constraints.maxWidth < 480;
+
+              if (isNarrow) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AppSearchField(
+                      controller: _searchController,
+                      maxWidth: double.infinity,
+                      placeholder: 'Search invoice #, customer name, cashier...',
+                      onChanged: (val) {
+                        ref.read(salesSearchQueryProvider.notifier).state = val;
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    AppButton.white(
+                      text: 'Scan Receipt QR',
+                      icon: const Icon(LucideIcons.qrCode, size: 16),
+                      onPressed: _scanInvoiceQr,
+                    ),
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  Expanded(
+                    child: AppSearchField(
+                      controller: _searchController,
+                      maxWidth: double.infinity,
+                      placeholder: 'Search invoice #, customer name, cashier...',
+                      onChanged: (val) {
+                        ref.read(salesSearchQueryProvider.notifier).state = val;
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  AppButton.white(
+                    text: 'Scan Receipt QR',
+                    icon: const Icon(LucideIcons.qrCode, size: 16),
+                    onPressed: _scanInvoiceQr,
+                  ),
+                ],
+              );
+            },
           ),
           const SizedBox(height: 12),
 

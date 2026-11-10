@@ -8,6 +8,7 @@ import '../../features/auth/presentation/controllers/auth_controller.dart';
 import 'app_search_field.dart';
 import 'avatar_menu.dart';
 import 'notification_bell.dart';
+import 'theme_picker_pill.dart';
 
 class AppTopBar extends ConsumerWidget {
   final String title;
@@ -66,10 +67,15 @@ class AppTopBar extends ConsumerWidget {
           if (!isPhone && !isSuperAdmin) ...[
             customSearchField ??
                 AppSearchField(
-                  maxWidth: isTablet ? 260 : 360,
+                  maxWidth: isTablet ? 260 : 460,
                   placeholder: 'Search medicines, invoices, batches...',
                 ),
             const SizedBox(width: 12),
+          ],
+          // Theme Picker pill group on desktop/tablet
+          if (!isPhone) ...[
+            const ThemePickerPill(),
+            const SizedBox(width: 8),
           ],
           // 44px circular notification button with 9px red dot (pharmacy roles)
           if (!isSuperAdmin) ...[

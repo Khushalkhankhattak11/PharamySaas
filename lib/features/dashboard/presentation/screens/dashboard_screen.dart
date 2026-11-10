@@ -216,17 +216,21 @@ class DashboardScreen extends ConsumerWidget {
       ),
     ];
 
-    // Responsive 6-card grid
-    int crossAxisCount = 6;
-    if (screenWidth < 640) {
-      crossAxisCount = 2;
-    } else if (screenWidth < 1024) {
-      crossAxisCount = 3;
-    }
-
+    // Responsive adaptive card grid based on parent container constraints
     return LayoutBuilder(
       builder: (context, constraints) {
         final availableWidth = constraints.maxWidth;
+        int crossAxisCount;
+        if (availableWidth >= 1150) {
+          crossAxisCount = 6;
+        } else if (availableWidth >= 780) {
+          crossAxisCount = 3;
+        } else if (availableWidth >= 480) {
+          crossAxisCount = 2;
+        } else {
+          crossAxisCount = 1;
+        }
+
         const spacing = 12.0;
         final totalSpacing = spacing * (crossAxisCount - 1);
         final cardWidth = (availableWidth - totalSpacing) / crossAxisCount;
@@ -282,23 +286,27 @@ class DashboardScreen extends ConsumerWidget {
       categories: summary.categoryShares,
     );
 
-    if (screenWidth < 1100) {
-      return Column(
-        children: [
-          areaChart,
-          const SizedBox(height: 20),
-          donutChart,
-        ],
-      );
-    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 900) {
+          return Column(
+            children: [
+              areaChart,
+              const SizedBox(height: 20),
+              donutChart,
+            ],
+          );
+        }
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(flex: 17, child: areaChart),
-        const SizedBox(width: 16),
-        Expanded(flex: 10, child: donutChart),
-      ],
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(flex: 17, child: areaChart),
+            const SizedBox(width: 16),
+            Expanded(flex: 10, child: donutChart),
+          ],
+        );
+      },
     );
   }
 
@@ -348,23 +356,27 @@ class DashboardScreen extends ConsumerWidget {
           summary.weekSales.isNotEmpty ? summary.weekSales.length - 1 : 0,
     );
 
-    if (screenWidth < 1100) {
-      return Column(
-        children: [
-          needsAttention,
-          const SizedBox(height: 20),
-          pillBarChart,
-        ],
-      );
-    }
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        if (constraints.maxWidth < 900) {
+          return Column(
+            children: [
+              needsAttention,
+              const SizedBox(height: 20),
+              pillBarChart,
+            ],
+          );
+        }
 
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Expanded(flex: 10, child: needsAttention),
-        const SizedBox(width: 16),
-        Expanded(flex: 14, child: pillBarChart),
-      ],
+        return Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Expanded(flex: 10, child: needsAttention),
+            const SizedBox(width: 16),
+            Expanded(flex: 14, child: pillBarChart),
+          ],
+        );
+      },
     );
   }
 
